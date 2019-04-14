@@ -1,0 +1,269 @@
+# Imports
+import os
+import sys
+import time
+
+# Inventory
+wood_logs = 0
+coin = 0
+
+# Location Variables
+'''shop_location = False
+forest_location = False'''
+
+loc = forest()
+
+# Location Descriptions
+
+
+# Mechanics
+'''def last_location():
+    global shop_location
+    global forest_location
+    if shop_location == True:
+        shop()
+    if forest_location == True:
+        forest()
+    else:
+        print("The programmer forgot to set the location variable, BAD PROGRAMMER!")'''
+
+'''def reset_location():
+    global shop_location
+    shop_location = False
+    global forest_location
+    forest_location = False'''
+
+def inventory():
+    print("Wood Logs: " + str(wood_logs))
+    print("Coin: " + str(coin))
+    if machete == True:
+        print("Machete")
+    if axe == True:
+        print("Axe")
+    print(" ")
+    print("To leave inventory, type exit.")
+
+    option = input("> ")
+    if option.lower() == ("exit"):
+        global loc
+        exec(loc)
+    else:
+        print("Not a valid command, please try again.")
+        inventory()
+
+
+# Equipment
+machete = True
+axe = False
+
+#Help Files
+def menu_help():
+    print("Welcom to the menu help section!")
+    print("This is where I will outline the basics of the game.")
+    print("Being text based, this game is dependant on user input, simply type your commands and hit 'enter' to have them exicuted.")
+    print("The most important command is the one you just entered. Typing 'Help' into any section of the game won't only give you these basic instructions,")
+    print("but also give you instructions speciific to the area which you are currently in.")
+    print("Look is the second most important command, as it gives you a general discription of what is around you in your current area.")
+    print("Most commands will be listed on the page in which they can be exicuted, so there is no need to guess at what options are available to you.")
+    print("However, along with 'help' and 'look', commands like 'character' and 'inventory' will always be available, even if not explicately displayed on the screen.")
+    print("Remember, if you are ever feeling lost, the help command is there to guide you, and is best used whenever you enter a new area to explain the commands given and their effects.")
+    print("That covers the basics, I hope you enjoy the game!")
+    title_screen_selections()
+
+def help_chop_wood():
+    print("Chopping wood requires either a machete, or an axe. The machete is not as effective, taking ten seconds, while the axe takes only five seconds.")
+
+# Functions
+def start_game():
+    print("You selected start game.")
+
+def title_screen_selections():
+    option = input("> ")
+    if option.lower() == ("start"):
+        start_game()
+    elif option.lower() == ("help"):
+        menu_help()
+    elif option.lower() == ("quit"):
+        sys.exit()
+    else:
+        print("Not a valid command, please try again.")
+        title_screen_selections()
+
+def title_screen():
+    os.system("cls")
+    print("Welcome to my game!")
+    print("      -start       ")
+    print("      -help        ")
+    print("      -quit        ")
+    title_screen_selections()
+
+def start_game():
+    print("You find yourself in the middle of a dense forest.")
+    print("You are currently dressed in some simple brown robes, with nothing to your name but a simple machete.")
+    print("In a valley below you can see a small town, a rough path through the brush near you leading down to the towns center.")
+    forest()
+
+def forest():
+    global loc
+    global forest()
+    loc = forest()
+    #reset_location()
+    #global forest_location
+    #forest_location = True
+    global wood_logs
+    print("Possible actions:")
+    print("-Chop Wood")
+    print("-Inventory")
+    print("-Go to town")
+    option = input("> ")
+    if option.lower() == ("chop wood"):
+        if machete == True:
+            time.sleep(10)
+            wood_logs = wood_logs + 1
+            print("You cut down a tree using your machete, and you receive one wood log!")
+            forest()
+        if axe == True:
+            time.sleep(5)
+            print("You cut down a tree using your axe, and you receive one wood log!")
+            wood_logs = wood_logs + 1
+            forest()
+        else:
+            print("You have nothing with which to chop the wood.")
+            forest()
+    if option.lower() == ("help chop wood"):
+        help_chop_wood()
+    if option.lower() == ("inventory"):
+        inventory()
+    if option.lower() == ("go to town"):
+        town()
+    else:
+        print("Not a valid command, please try again.")
+        forest()
+
+def town():
+    global loc
+    loc = town()
+    print("Before you sits a quiet little town nestled amongst the trees, a patchwork of small houses and shops")
+    print("Possible actions:")
+    print("-Go to forest")
+    print("-Go to shop")
+    option = input("> ")
+    if option.lower() == ("go to forest"):
+        forest()
+    if option.lower() == ("go to shop"):
+        shop()
+    else:
+        print("Not a valid command, please try again.")
+
+def shop():
+    global loc
+    loc = shop()
+   # reset_location()
+   # global shop_location
+   # shop_location = True
+    print ("You are currently in the shop.")
+    option = input("> ")
+    if option.lower() == ("inventory"):
+        inventory()
+    if option.lower() == ("buy"):
+        shop_buy()
+    if option.lower() == ("sell"):
+        shop_sell()
+    else:
+        print("Not a valid command, please try again.")
+        shop()
+
+def shop_buy():
+    global coin
+    global axe
+    global wood_logs
+    print("Items for sale:")
+    print("-Axe. 10 coin")
+    print("What would you like to buy?")
+    print("-Machete: 4 coins")
+    print("-Axe: 10 coins")
+    print("-Log: 2 coins")
+    option = input("> ")
+
+    if option.lower() == ("axe"):
+        if coin > 9 and axe == False:
+            axe = True
+            coin = coin -10
+            print("You purcahsed the axe!")
+            shop_buy()
+        if axe == True:
+            print("You already own an axe.")
+            shop_buy()
+        else:
+            print("You do not have enough coins for that purchase.")
+            shop_buy()
+
+    if option.lower() == ("log"):
+        if coin > 1:
+            wood_logs = wood_logs +1
+            coin = coin -2
+            print("You purchased a log.")
+            shop_buy()
+
+    if option.lower() == ("machete"):
+        if machete == True:
+            print("You already own a machete.")
+            shop_buy()
+        if machete == False and coin > 3:
+            coin == coin -4
+            machete = True
+            print("You bought a machete!")
+            shop_buy()
+
+    if option.lower() == ("exit"):
+        shop()
+
+def shop_sell():
+    global coin
+    global axe
+    global machete
+    global wood_logs
+    print("To sell an item, type sell followed by the items name.")
+    print("To return to the shop, type exit.")
+    option = input("> ")
+    if option.lower() == ("sell axe"):
+        if axe == True:
+            axe = False
+            coin = coin + 5
+            print("You sold the axe!")
+            shop_sell()
+        else:
+            print("You do not own an axe.")
+            shop_sell()
+
+    if option.lower() == ("sell machete"):
+        if machete == True:
+            machete = False
+            coin = coin + 2
+            print("You sold the machete!")
+            shop_sell()
+        else:
+            print("You do not own a machete.")
+            shop_sell()
+
+    if option.lower() == ("sell log"):
+        if wood_logs > 0:
+            wood_logs = wood_logs - 1
+            coin = coin + 1
+            print("You have sold a wood log.")
+            shop_sell()
+        else:
+            print("You have no wood logs to sell.")
+            shop_sell()
+
+    if option.lower() == ("exit"):
+        shop()
+
+    else:
+        print("Invalid command, please try again.")
+        shop_sell()
+
+
+
+# Game Start
+title_screen()
