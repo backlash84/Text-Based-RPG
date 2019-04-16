@@ -1,0 +1,107 @@
+#### Imports ####
+import os
+import sys
+import time
+import random
+
+#### Classes ####
+
+# How item information is stored.
+class item:
+    def __init__(self, name, value, description, number):
+        self.name = name
+        self.value = value
+        self.sell = (value/2)
+        self.description = description
+        self.number = number
+
+    # How inventory will be desplayed.
+    def inventory(self):
+        print(str(self.name) + ": " + str(self.number))
+
+    # Part I'm having trouble with!!!!!!!!!!!!!!
+    # Should be using the item class information to check if the player has enough coins. If they do, you get 1 of the item,
+    # lose number of the coins equal to the value, and then print out what you bought. Else prints error and ends function.
+      
+    def buy(self):
+        if coin.number >= self.value:
+            self.number = self.number + 1
+            coin.number = coin.number - self.value
+            print("You purchased a " + str(self.name) + ".")
+        else:
+            print("You do not have enough coin to purchase this item.")
+          
+class location:
+    def __init__(self, name, description, options):
+        self.name = name
+        self.description = description
+        self.options = options
+
+    def location(self):
+        print(self.name)
+        print(self.description)
+        print("Options:" + self.options)
+  
+ # works fine with this      
+ def inventory():
+   if mushroom.number > 0:
+       print(mushroom.inventory())
+   if log.number > 0:
+       print(log.inventory())
+   if rock.number > 0:
+       print(rock.inventory())
+   if machete.number > 0:
+       print(machete.inventory())
+   if axe.number > 0:
+       print(axe.inventory())
+   else:
+       print("Your inventory is currently empty!")
+        
+# And here's the big WTF. No idea why it's not working, it seems to not recognize the buy function in the item class for some reason.        
+
+def general_store_buy():
+    global coin
+    global axe
+    global log
+    global mushroom
+    global stone
+    global machete
+    global x
+    x = 0
+    while x == 0:
+        print('''To buy an item, simply type it's name.
+
+        Items for sale:
+        -Axe: ''' + str(axe.value) + '''coin
+        -Machete: ''' + str(machete.value) + ''' coins.
+        -Log: ''' + str(log.value) + ''' coins
+        -Mushroom: ''' + str(mushroom.value) + ''' coins
+        -Stone: ''' + str(stone.value) + ''' coin.''')
+        option = input("> ")
+
+        if option.lower() == ("inventory"):
+            inventory()
+
+        elif option.lower() == ("axe"):
+            buy(axe)
+
+        elif option.lower() == ("log"):
+            buy(log)
+
+        elif option.lower() == ("machete"):
+            buy(machete)
+
+        elif option.lower() == ("mushroom"):
+            buy(mushroom)
+
+        elif option.lower() == ("stone"):
+            buy(stone)
+
+        elif option.lower() == ("exit"):
+            x = 1
+
+        else:
+            print("Invalid command, please try again.")
+            
+       # Any help you can give would be greatly appreciated.
+
