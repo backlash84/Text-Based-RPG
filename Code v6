@@ -1,0 +1,556 @@
+########## CLASSES FILE ##########
+
+#### CLASS ####
+class player:
+    def __init__(self, name,skills, coin, items, energy, health, armour):
+        self.name = name
+        self.skills = skills
+        self.coin = coin
+        self.items = items
+        self.energy = energy
+        self.health = health
+        self.armour = armour
+
+class item:
+    def __init__(self, name, value, description):
+        self.name = name
+        self.value = value
+        self.sell = (value/2)
+        self.description = description
+
+    def __repr__(self):
+        return self.name
+
+class skills:
+    def __init__(self, name, description):
+        self.name = name
+        self.description = description
+
+class location:
+    def __init__(self, name, description, options):
+        self.name = name
+        self.description = description
+        self.options = options
+
+    def location(self):
+        print(self.name)
+        print(self.description)
+        print("Options:" + self.options)
+
+########## TIMERS FILE ##########
+
+def timer_up():
+    for t in timer_list:
+        if active_timers.count(t) > 0:
+            active_timers.append(t)
+
+day_count = 0
+
+timer_list = ["hay timer"]
+active_timers = []
+
+sleep_bonus = 0
+
+########## ITEMS FILE ##########
+
+from Classes import item
+from Functions import invalid
+from Skills import main_character
+
+
+#### ITEMS ####
+
+mushroom = item("mushroom", 3, "A forest mushroom, in good condition, commonly used in food and medicine.")
+machete = item("machete", 5, "A long bladed machete, multi-purpose. Costs 20 energy to cut down a tree.")
+log = item("log", 1, "A simple wooden log.")
+axe = item("axe", 10, "A long handled axe, purpose built for cutting trees, costing only 10 energy.")
+stone = item("stone", 1, "A simple slab of stone.")
+pick_axe = item("pick axe", 15, "A simple mining tool used to gather stone and ore from the earth.")
+copper_ore = item("copper ore", 2, "A mixture of raw copper and grit.")
+hay = item("hay", 1, "Dried grass, used for feeding animals, and in some cases, as bedding material.")
+scythe = item("scythe", 10, "A bladed tool, usually used in farm work.")
+
+item_list = [mushroom, machete, log, axe, stone, pick_axe, copper_ore, hay]
+item_list_strings = []
+item_list_value = []
+
+player_items = ["machete", "pick axe", "scythe"]
+
+def item_values():
+    for item_var in item_list:
+        print(item_var.name + ": " + str(item_var.value))
+
+def inventory_items():
+    for item_var in item_list:
+        if player_items.count(item_var.name) > 0:
+            print(item_var.name + ": " + str(player_items.count(item_var.name)))
+
+def player_inventory():
+    print("Health: " + str(main_character.health))
+    print("Energy: " + str(main_character.energy))
+    print("Coin: " + str(main_character.coin))
+    print("")
+    print("ITEMS")
+    print("")
+    inventory_items()
+    print("")
+    print("To return, type exit.")
+    x = 0
+    while x == 0:
+        option = input("> ")
+        if option.lower() == ("exit"):
+            break
+        else:
+            invalid()
+
+########## SKILLS FILE ##########
+
+from Classes import skills
+from Classes import player
+from Items import player_items
+
+#### SKILLS ####
+
+scavenging = skills("Scavenging", "The ability to find things of use/value in nature.")
+strength = skills("Strength", "An individuals raw physical power.")
+
+
+skill_list = [scavenging, strength]
+player_skills = ["Scavenging", "Strength"]
+
+#### CHARACTERS ####
+main_character = player("Adventurer", player_skills, 100, player_items, 100, 100, 0)
+
+########## FUNCTIONS FILE ##########
+
+import time
+import random
+
+from Timers import active_timers
+from Timers import timer_list
+from Timers import sleep_bonus
+from Skills import skill_list
+from Skills import player_skills
+from Skills import main_character
+from Items import player_inventory
+from Items import player_items
+from Items import item_list
+from Items import item_list_strings
+from Items import item_values
+
+#### FUNCTIONS ####
+
+def invalid():
+    print("Invalid command, please try again.")
+
+def cut_tree():
+    if player_items.count("axe") >= 1:
+        time.sleep(11 - player_skills.count("Strength"))
+        player_items.append("log")
+        main_character.energy = main_character.energy - 10
+        print("You cut down a tree using your axe, and you receive one wood log!")
+
+    elif player_items.count("machete") >= 1:
+        time.sleep(11 - player_skills.count("Strength"))
+        player_items.append("log")
+        main_character.energy = main_character.energy - 20
+        print("You cut down a tree using your machete, and you receive one wood log!")
+
+    else:
+        print("You have nothing with which to chop the wood.")
+
+def mine_ore(ore, pickaxe):
+    if player_items.count(pickaxe.name) >= 1:
+        time.sleep(10)
+        player_items.append(ore.name)
+        main_character.energy = main_character.energy - 10
+        if ore.name == "Stone":
+            print("You manage to break a slap of stone free from the surrounding rock.")
+        else:
+            print("After some effort, you manage to harvest a decent amount of " + ore.name + ".")
+
+def search(item_var):
+    probability = ['find', 'nothing']
+    result = random.choices(probability, weights=[player_skills.count("Scavenging"), 4], k=1)[0]
+    if result == 'find':
+        time.sleep(5)
+        item_var.name.append(player_inventory())
+        print("You found a " + item_var.name + "!")
+
+    elif result == 'nothing':
+        time.sleep(5)
+        print("You found nothing of value")
+
+    else:
+        print("Error, command incorrect. BAD PROGRAMMER!")
+
+def buy_item(item_name):
+    if item_list.count(item_name) > 0 and main_character.coin >= item_name.value:
+        player_items.append(item_name.name)
+        main_character.coin = main_character.coin - item_name.value
+    elif main_character.coin < item_name.value:
+        print("You do not have enough coin to purchase this item.")
+    else:
+        print("Please enter a valid object name.")
+
+def sell_item(item_name):
+    if player_items.count(item_name.name) > 0:
+        player_items.remove(item_name.name)
+        main_character.coin = main_character.coin + item_name.sell
+    else:
+        print("You do not have that item in your inventory.")
+
+
+def general_store_buy():
+    x = 0
+    while x == 0:
+        print("Item values are displayed after their name.")
+        print("To purchase an item, simply type in its name.")
+        print("")
+        item_values()
+        option = input("> ")
+        input_lower = option.lower
+
+        if option.lower() == ("inventory"):
+            player_inventory()
+
+        elif input_lower in item_list_strings:
+            buy_item(input_lower)
+
+        elif option.lower() == ("exit"):
+            break
+
+        else:
+            print("Invalid command, please try again.")
+
+
+def general_store_sell():
+    x = 0
+    while x == 0:
+        print("To sell an item, simply type its name.")
+        print("Sold items go for half their default value.")
+        print("")
+        option = input("> ")
+
+        if option.lower() == ("inventory"):
+            player_inventory()
+
+
+def sleep():
+    main_character.energy = 50
+    main_character.energy = main_character.energy + sleep_bonus
+    print("You wake up from a restful sleep. You currently have " + str(main_character.energy) + " energy.")
+
+
+def player_character_sheet():
+    print("Player name: " + main_character.name)
+    print("")
+    print("Active timers:")
+    for y in timer_list:
+        if active_timers.count(y) > 0:
+            print(y + " day " + str(active_timers.count(y)))
+    print("")
+    print("Skills:")
+    for var in skill_list:
+        if player_skills.count(var.name) > 0:
+            print(var.name + " level " + str(player_skills.count(var.name)) + ": " + var.description)
+
+
+#### BUILDING STATS ####
+
+fire_pit = False
+home_foundation = False
+log_shack = False
+basic_bed = False
+
+
+def build_menu():
+    print("BUILD MENU")
+    print("To get information on any piece, simply type help followed by the name of the piece. ex(help foundation).")
+    print("")
+    print("Fire Pit: 5 Stone, 5 Logs.")
+    print("Stone foundation: 50 stone.")
+    print("Log shack: 50 logs.")
+    print("Basic bed: 5 Logs, 5 Hay.")
+
+########## LOCATIONS FILE ##########
+import os
+import sys
+
+from Classes import location
+from Timers import active_timers
+from Functions import invalid
+from Functions import cut_tree
+from Functions import search
+from Functions import build_menu
+from Functions import mine_ore
+from Functions import player_character_sheet
+from Functions import general_store_buy
+from Functions import general_store_sell
+from Functions import sleep
+from Skills import main_character
+from Items import player_inventory
+from Items import stone
+from Items import pick_axe
+from Items import copper_ore
+from Items import player_items
+from Items import scythe
+
+#### LOCATIONS ####
+
+def start_menu():
+    os.system("cls")
+    print('''Welcome to my game!
+    1: start
+    2: help
+    3: quit   ''')
+
+
+    global last_location
+    x = 0
+    while x == 0:
+        option = input("> ")
+        if option.lower() == ("start"):
+            last_location = 'forest_location()'
+            break
+        elif option.lower == ("help"):
+            print("Help section goes here.")
+            last_location = 'start_menu()'
+            break
+        elif option.lower == ("quit"):
+            sys.exit()
+        else:
+            invalid()
+
+
+forest = location("Forest", "The forest is densely packed with trees and rich with foliage.", "\n -Chop wood \n -Go to town \n -Go to clearing \n -Go to rocky hillside \n -Search \n -Inventory")
+def forest_location():
+    global last_location
+    last_location = 'forest_location()'
+    print(forest.location())
+    x = 0
+    while x == 0:
+        option = input("> ")
+        if option.lower() == ("chop wood"):
+            cut_tree()
+
+        elif option.lower() == ("go to town"):
+            last_location = 'town_location()'
+            break
+
+        elif option.lower() == ("go to clearing"):
+            last_location = 'clearing_location()'
+            break
+
+        elif option.lower() == ("go to rocky hillside"):
+            last_location = 'rockey_hillside_location()'
+            break
+
+        elif option.lower() == ("search"):
+            search()
+
+        elif option.lower() == ("inventory"):
+            player_inventory()
+
+        elif option.lower() == ("character sheet"):
+            player_character_sheet()
+
+        else:
+            print("Command not valid, please try again.")
+
+
+town = location("Town", "A quaint little town with simple wood buildings.", "\n -Go to general store\n -Go to forest\n -Inventory")
+def town_location():
+    global last_location
+    print(town.location())
+    x = 0
+    while x == 0:
+        option = input("> ")
+        if option.lower() == ("go to general store"):
+            last_location = 'town_general_store_location()'
+            break
+
+        elif option.lower() == ("go to forest"):
+            last_location = 'forest_location()'
+            break
+
+        elif option.lower() == ("inventory"):
+            player_inventory()
+
+        elif option.lower() == ("character sheet"):
+            player_character_sheet()
+
+        else:
+            print("Command not valid, please try again.")
+
+
+general_store = location("General store", "A cluttered little shop filled with many different odds and ends.", "\n -Buy\n -Sell\n -Inventory\n -Exit")
+def town_general_store_location():
+    global last_location
+    print(general_store.location())
+    x = 0
+    while x == 0:
+        option = input("> ")
+
+        if option.lower() == ("inventory"):
+            player_inventory()
+
+        elif option.lower() == ("buy"):
+            general_store_buy()
+
+        elif option.lower() == ("sell"):
+            general_store_sell()
+
+        elif option.lower() == ("give coin"):
+            main_character.coin = main_character.coin + 100
+
+        elif option.lower() == ("character sheet"):
+            player_character_sheet()
+
+        elif option.lower() == ("exit"):
+            last_location = 'town_location()'
+            break
+        else:
+            print("Not a valid command, please try again.")
+
+rocky_hillside = location("Rocky Hillside", "A rocky outcropping surrounded by gravel and slabs of stone.", "\n -Mine for stone\n -Mine for copper ore\n -Go to forest\n -Inventory")
+def rockey_hillside_location():
+    global last_location
+    print(rocky_hillside.location())
+    x = 0
+    while x == 0:
+        option = input("> ")
+
+        if option.lower() == ("mine for stone"):
+            mine_ore(stone, pick_axe)
+
+        elif option.lower() == ("mine for copper"):
+            mine_ore(copper_ore, pick_axe)
+
+        elif option.lower() == ("inventory"):
+            player_inventory()
+
+        elif option.lower() == ("character sheet"):
+            player_character_sheet()
+
+        elif option.lower() == ("go to forest"):
+            last_location = 'forest_location()'
+            break
+
+        else:
+            invalid()
+
+
+clearing = location("Clearing", "A large, relatively flat plane of land. Perfect for constructing a new home.", "\n To build on the land, type construction.\n - Inventory.\n -Make hay.\n -Collect hay.\n -Go to forrest")
+def clearing_location():
+    global last_location
+    print(clearing.location())
+    y = 0
+    x = 0
+    while x == 0:
+        option = input("> ")
+
+        if option.lower() == ("construction"):
+            build_menu()
+
+        elif option.lower() == ("go to forest"):
+            last_location = 'forest_location()'
+            break
+
+        elif option.lower() == ("make hay"):
+            if active_timers.count("hay timer") == 0:
+                active_timers.append("hay timer")
+                print("Using your scythe, cut the grass in the surrounding area, leaving it to dry.")
+            elif active_timers.count("hay timer") == 1:
+                print("Your hay is currently drying.")
+            elif active_timers.count("hay timer") >= 2:
+                print("Your hay is dry, and waiting to be collected.")
+            elif player_items.count(scythe.name) == 0:
+                print("You require a scythe to make hay.")
+            else:
+                print("ERROR... BAD PROGRAMMER!")
+
+        elif option.lower() == ("collect hay"):
+
+            if active_timers.count("hay timer") == 0:
+                print("You have no hay drying.")
+
+            elif active_timers.count("hay timer") == 1:
+                print("The hay is not yet finished drying.")
+
+            elif active_timers.count("hay timer") >= 2:
+                print("The hay has finished drying, you collect 10 hay.")
+                while y < 10:
+                    player_items.append("hay")
+                    y = y + 1
+                while active_timers.count("hay timer") >0:
+                    active_timers.remove("hay timer")
+            else:
+                print("Error... BAD PROGRAMMER!")
+
+        elif option.lower() == ("sleep"):
+            sleep()
+            last_location = 'clearing_location()'
+            break
+
+        elif option.lower() == ("inventory"):
+            player_inventory()
+
+        elif option.lower() == ("character sheet"):
+            player_character_sheet()
+
+        else:
+            invalid()
+
+########## MAIN FILE ##########
+
+import time
+
+from Classes import player
+from Items import item_list
+from Items import item_list_strings
+from Items import item_list_value
+from Timers import timer_up
+from Skills import player_skills
+from Locations import start_menu
+
+
+#### CHARACTERS ####
+main_character = player("Adventurer", player_skills, 100, player_items, 100, 100, 0)
+
+
+#### GAME START ####
+last_location = 'start_menu()'
+
+for var in item_list:
+    item_list_strings.append(var.name)
+
+for var in item_list:
+    item_list_value.append(var.value)
+print(item_list_value)
+
+day_count = 0
+
+timer_list = ["hay timer"]
+active_timers = []
+
+sleep_bonus = 0
+
+while main_character.health > 0:
+    if main_character.energy <= 0:
+        print("You collapse due to lack of energy, you lose 20 health.")
+        day_count = day_count + 1
+        timer_up()
+        main_character.health = main_character.health - 20
+        main_character.energy = 50
+        exec(last_location)
+
+    else:
+        exec(last_location)
+
+#### PLAYER DEAD ####
+if main_character.health <= 0:
+    print("        GAME OVER        ")
+    print("Your health reached zero.")
+    time.sleep(5)
+    start_menu()
