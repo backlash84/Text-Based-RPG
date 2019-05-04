@@ -5,7 +5,6 @@ from locations import forest
 from functions import invalid
 
 def start_menu():
-    return
     os.system("cls")
     print('''Welcome to my game!
     1: start

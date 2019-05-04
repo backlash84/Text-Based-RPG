@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from items import mushroom, machete, log, axe, stone, pickaxe, copper_ore, item_values, item_dict
+import items
 from functions import invalid
 
 class Location:
@@ -34,7 +34,7 @@ class Forest(Location):
                 return rocky_hillside
 
             elif option.lower() == ("search"):
-                player.search(mushroom)
+                player.search(items.mushroom)
 
             elif option.lower() == ("inventory"):
                 player.inventory()
@@ -103,15 +103,15 @@ class GeneralStore(Location):
             print("Item values are displayed after their name.")
             print("To purchase an item, simply type in its name.")
             print("")
-            item_values()
+            items.item_values()
             option = input("> ")
             input_lower = option.lower()
 
             if option.lower() == "inventory":
                 player.inventory()
 
-            elif input_lower in item_dict:
-                player.buy_item(item_dict[input_lower])
+            elif input_lower in items.item_dict:
+                player.buy_item(items.item_dict[input_lower])
 
             elif option.lower() == ("exit"):
                 break
@@ -131,8 +131,8 @@ class GeneralStore(Location):
             if option.lower() == ("inventory"):
                 player.inventory()
 
-            elif input_lower in item_dict:
-                player.sell_item(item_dict[input_lower])
+            elif input_lower in items.item_dict:
+                player.sell_item(items.item_dict[input_lower])
 
             elif option.lower() == ("exit"):
                 break
@@ -153,10 +153,10 @@ class RockyHillside(Location):
             option = input("> ")
 
             if option.lower() == ("mine for stone"):
-                player.mine_ore(stone)
+                player.mine_ore(items.stone)
 
             elif option.lower() == ("mine for copper"):
-                player.mine_ore(copper_ore)
+                player.mine_ore(items.copper_ore)
 
             elif option.lower() == ("inventory"):
                 player.inventory()
@@ -167,7 +167,7 @@ class RockyHillside(Location):
             else:
                 invalid()
 
-# create singletons
+# create singleton constants
 forest = Forest()
 general_store = GeneralStore()
 town = Town()

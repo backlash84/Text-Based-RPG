@@ -17,8 +17,8 @@ copper_ore = Item("Copper ore", 2, "A mixture of raw copper and grit.")
 scythe = Item("scythe", 10, "A bladed tool, usually used in farm work.")
 
 item_list = [mushroom, machete, log, axe, stone, pickaxe, copper_ore, scythe]
-
 item_dict = {item_var.name.lower():item_var for item_var in item_list}
+initial_items = [machete, pickaxe, scythe]
 
 def item_values():
     for item_var in item_list:

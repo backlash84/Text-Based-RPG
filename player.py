@@ -2,7 +2,7 @@
 
 import random
 
-from items import mushroom, machete, log, axe, stone, pickaxe, copper_ore, scythe
+import items
 from skills import scavenging, strength
 from functions import sleep
 
@@ -11,7 +11,7 @@ class Player:
         self.name = name
         self.skills = [scavenging, strength] # set initial skills
         self.coin = coin
-        self.items = [machete, pickaxe, scythe] # set initial items
+        self.items = items.initial_items.copy() # set initial items
         self.energy = energy
         self.health = health
         self.armour = armour
@@ -48,21 +48,21 @@ class Player:
 
     # these methods can be here or you could design them to be in the respective location classes
     def cut_tree(self):
-        if self.items.count(axe) >= 1:
+        if self.items.count(items.axe) >= 1:
             sleep(11 - self.skills.count(strength)) # this will cause an error when the time goes negative
-            self.items.append(log)
+            self.items.append(items.log)
             self.energy = self.energy - 10
             print("You cut down a tree using your axe, and you receive one wood log!")
-        elif self.items.count(machete) >= 1:
+        elif self.items.count(items.machete) >= 1:
             sleep(11 - self.skills.count(strength))
-            self.items.append(log)
+            self.items.append(items.log)
             self.energy = self.energy - 20
             print("You cut down a tree using your machete, and you receive one wood log!")
         else:
             print("You have nothing with which to chop the wood.")
 
     def mine_ore(self, ore):
-        if self.items.count(pickaxe) >= 1:
+        if self.items.count(items.pickaxe) >= 1:
             sleep(10)
             self.items.append(ore)
             self.energy = self.energy - 10
