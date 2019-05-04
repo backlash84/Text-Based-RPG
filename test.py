@@ -27,9 +27,9 @@ test = iter([
 def fake_input(prompt=""):
     try:
         command = next(test)
-        print(command)
+        print(prompt, command)
     except StopIteration:
-        command = input()
+        command = input(prompt)
     return command
 
 import main
