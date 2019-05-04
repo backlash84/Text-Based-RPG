@@ -17,7 +17,7 @@ class Forest(Location):
         self.options = "\n -Chop wood \n -Go to town \n -Go to clearing \n -Go to rocky hillside \n -Search \n -Inventory"
 
     def action(self, player):
-        print(self.location())
+        self.location()
         x = 0
         while x == 0:
             option = input("> ")
@@ -53,7 +53,7 @@ class Town(Location):
         self.options = "\n -Go to general store\n -Go to forest\n -Inventory"
 
     def action(self, player):
-        print(self.location())
+        self.location()
         x = 0
         while x == 0:
             option = input("> ")
@@ -74,7 +74,7 @@ class GeneralStore(Location):
         self.options = "\n -Buy\n -Sell\n -Inventory\n -Exit"
 
     def action(self, player):
-        print(self.location())
+        self.location()
         x = 0
         while x == 0:
             option = input("> ")
@@ -147,7 +147,7 @@ class RockyHillside(Location):
         self.options = "\n -Mine for stone\n -Mine for copper ore\n -Go to forest\n -Inventory"
 
     def action(self, player):
-        print(self.location())
+        self.location()
         x = 0
         while x == 0:
             option = input("> ")

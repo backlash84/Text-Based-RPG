@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+import os
+
 from player import Player
 from locations import forest
 from functions import invalid
@@ -41,5 +43,6 @@ def main():
     print("Your health reached zero.")
     time.sleep(5)
 
-while True:
-    main()
+if __name__ == "__main__":
+    while True:
+        main()

@@ -66,7 +66,7 @@ class Player:
             sleep(10)
             self.items.append(ore)
             self.energy = self.energy - 10
-            if ore == stone:
+            if ore == items.stone:
                 print("You manage to break a slap of stone free from the surrounding rock.")
             else:
                 print("After some effort, you manage to harvest a decent amount of " + ore.name + ".")
