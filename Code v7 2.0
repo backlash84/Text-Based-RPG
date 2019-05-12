@@ -1,0 +1,824 @@
+########## Main_v7 ##########
+
+import os
+import sys
+import time
+
+from Player_v7 import Player
+from Locations_v7 import forest
+from Functions_v7 import invalid, Timer
+
+
+def start_menu():
+    os.system("cls")
+    print('''Welcome to my game!
+    1: start
+    2: help
+    3: quit   ''')
+
+    x = 0
+    while x == 0:
+        option = input("> ")
+        if option.lower() == ("start"):
+            break
+        elif option.lower() == ("help"):
+            print("Help section goes here.")
+        elif option.lower() == ("quit"):
+            sys.exit()
+        else:
+            invalid()
+
+def main():
+    #### CHARACTERS ####
+    start_menu()
+    main_character = Player("Adventurer", 100, 100, 100, 0)
+    main_character.location = forest # set initial location
+
+    while main_character.health > 0:
+        if main_character.energy <= 0:
+            print("You collapse due to lack of energy, you lose 10 health.")
+            main_character = main_character.health - 10
+            main_character.energy = 50
+            Timer.timer_up()
+
+        main_character.one_turn()
+
+
+    print("        GAME OVER        ")
+    print("Your health reached zero.")
+    time.sleep(5)
+    sys.exit()
+
+if __name__ == "__main__":
+    while True:
+        main()
+        
+########## Functions_v7 ##########
+
+"""
+A module of general purpose functions that didn't really have a place anywhere else.
+"""
+import time
+from itertools import cycle
+import Items_v7
+from Items_v7 import hay
+
+DEBUG = False
+
+def invalid():
+    print("Invalid command, please try again.")
+
+spinner = cycle("\|/-")
+def sleep(seconds):
+    for i in range(seconds*4):
+        print(" Working ... ", next(spinner), end='\r', flush=True)
+time.sleep(.02 if DEBUG else .25)
+
+class Timer:
+    def __init__(self, name, limit, current, payout, amount):
+        self.name = name
+        self.limit = limit
+        self.current = current
+        self.current = payout
+        self.amount = amount
+
+
+    def timer_up(self):
+        for var in timer_list:
+            if var in active_timers:
+                active_timers.append(var)
+        for var in active_timers:
+            if var.current >= var.limit:
+                complete_timers.append(var)
+                active_timers.remove(var)
+
+    def set_timer(self, timer):
+        active_timers.append(timer)
+
+
+hay_timer = Timer("Hay timer", 2, 0, hay, 10)
+mushroom_timer = Timer("Mushroom timer", 5, 0, Items_v7.mushroom, 10)
+carrot_timer = Timer("Carrot timer", 3, 0, Items_v7.carrot, 10)
+potato_timer = Timer("Potato timer", 3, 0, Items_v7.potato, 10)
+cabbage_timer = Timer("Cabbage timer", 2, 0, Items_v7.cabbage, 10)
+
+timer_list = [hay_timer, mushroom_timer, carrot_timer, potato_timer, cabbage_timer]
+active_timers = []
+complete_timers = []
+
+
+########## Items_v7 ##########
+
+import Functions_v7
+
+class Item:
+    def __init__(self, name, value, description):
+        self.name = name
+        self.value = (value)
+        self.sell = (value/2)
+        self.description = description
+
+class Seed(Item):
+    def __init__(self, name, value, description, timer):
+        super().__init__(name, value, description)
+        self.timer = timer
+
+#### TOOLS ####
+
+machete = Item("Machete", 5, "A long bladed machete, multi-purpose. Costs 20 energy to cut down a tree.")
+axe = Item("Axe", 10, "A long handled axe, purpose built for cutting trees, costing only 10 energy.")
+pickaxe = Item("Pick axe", 15, "A simple mining tool used to gather stone and ore from the earth.")
+scythe = Item("scythe", 10, "A bladed tool, usually used in farm work.")
+saw = Item("Saw", 10, "A tool used to cut down trees and make boards out of logs.")
+hoe = Item("Hoe", 10, "An item used to plow fields")
+
+#### MATERIALS ####
+
+hay = Item("Hay", 1, "A form of dried grass used as cushioning and food for some animals.")
+log = Item("Log", 1, "A simple wooden log.")
+stone = Item("Stone", 1, "A simple slab of stone.")
+copper_ore = Item("Copper ore", 2, "A mixture of raw copper and grit.")
+wood_board = Item("Wood board", 2, "A wooden board, useful in construction.")
+wood_scrap = Item("Wood Scrap", 0, "The scraps left over from a woodworking project, relatively worthless.")
+iron_ore = Item("Iron ore", 4, "Raw iron ore, can be smelted into iron ingots.")
+iron_ingot = Item("Iron ingot", 6, "Refined iron, ready to be used in any project.")
+charcoal = Item("Charcoal", 1, "Wood that has been heated in low oxygen, removing all moisture. Burns hotter than wood.")
+coal = Item("Coal", 2, "A lump of solid carbon, burns hotter than both wood and charcoal.")
+iron_nail = Item("Iron nail", 1, "A nail made of pure iron, commonly used in construction projects.")
+
+#### CROPS ####
+mushroom = Item("Mushroom", 3, "A forest mushroom, in good condition, commonly used in food and medicine.")
+carrot = Item("Carrot", 1, "A common root vegetable, orange in colour, commonly roasted or boiled.")
+potato = Item("Potato", 1, "A common edible tuber, a staple food for the poor, commonly roasted or boiled.")
+cabbage = Item("Cabbage", 1, "A, round, leafy green vegetable. Commonly boiled")
+
+#### SEEDS ####
+mushroom_spores = Seed("Mushroom spores", 1, "Spores from a wild mushroom, required for growing mushrooms.", Functions_v7.mushroom_timer)
+carrot_seeds = Seed("Carrot seeds", 1, "Carrot seeds, used to grow carrots.", Functions_v7.carrot_timer)
+potato_seeds = Seed("Potato seeds", 1, "Potato seeds, used for growing potatoes.", Functions_v7.potato_timer)
+cabbage_seeds = Seed("Cabbage seeds", 1, "Cabbage seeds, used for growing cabbages.", Functions_v7.cabbage_timer)
+
+#### HOUSE UPRGADES ####
+
+simple_workbench = Item("Simple workbench", 50, "A place to craft simple items.")
+simple_stove = Item("Simple stove", 70, "An all purpose stove, small, but practical for most uses.")
+iron_anvil = Item("Anvil", 70, "A solid chunk of iron, used to shape metals softer than itself. ")
+
+#### LISTS ####
+#Catagories
+tool_list = [machete, axe, pickaxe, scythe, saw]
+tool_dict = {item_var.name.lower():item_var for item_var in tool_list}
+
+crops_list = [mushroom, carrot, potato, cabbage]
+crops_dict = {item_var.name.lower():item_var for item_var in crops_list}
+
+seed_list = [mushroom_spores, carrot_seeds, potato_seeds, cabbage_seeds]
+seed_dict = {item_var.name.lower():item_var for item_var in seed_list}
+
+materials_list = [log, stone, copper_ore, hay, wood_board, wood_scrap, iron_ore, iron_ingot, charcoal, coal, iron_nail]
+materials_dict = {item_var.name.lower():item_var for item_var in materials_list}
+
+house_upgrades_list = [simple_workbench, simple_stove, iron_anvil]
+house_upgrades_dict = {item_var.name.lower():item_var for item_var in house_upgrades_list}
+
+field_crop = []
+
+field_finished = []
+
+#Shop lists
+
+#Total lists
+item_list = tool_list + crops_list + seed_list + materials_list + house_upgrades_list
+item_dict = {item_var.name.lower():item_var for item_var in item_list}
+initial_items = [machete, scythe, hoe, potato_seeds, carrot_seeds, cabbage_seeds, mushroom_spores]
+
+#Installed house upgrades
+installed_upgrades_list = []
+installed_upgrades_dict = {item_var.name.lower():item_var for item_var in installed_upgrades_list}
+
+#### FUNCTION ####
+
+def item_values(list):
+    for item_var in list:
+        print(item_var.name + ": " + str(item_var.value))
+        
+########## Location_v7 ##########
+
+import Items_v7
+import Player_v7
+from Functions_v7 import invalid
+
+
+class Location:
+    def location(self):
+        print("You are at the", self.name)
+        print(self.description)
+        print("Options:" + self.options)
+
+
+class Forest(Location):
+    def __init__(self):
+        self.name = "Forest"
+        self.description = "The forest is densely packed with trees and rich with foliage."
+        self.options = "\n -Chop wood \n -Go to town \n -Go to clearing \n -Go to rocky hillside \n -Search \n -Inventory"
+
+    def action(self, player):
+        self.location()
+        x = 0
+        while x == 0:
+            option = input("> ")
+            if option.lower() == ("chop wood"):
+                player.cut_tree()
+
+            elif option.lower() == ("go to town"):
+                return town
+
+            elif option.lower() == ("go to clearing"):
+                return clearing
+
+            elif option.lower() == ("go to rocky hillside"):
+                return rocky_hillside
+
+            elif option.lower() == ("search"):
+                player.search(Items_v7.mushroom)
+
+            elif option.lower() == ("inventory"):
+                player.inventory()
+
+            elif option.lower() == ("character sheet"):
+                player.character_sheet()
+
+            else:
+                invalid()
+
+
+class Town(Location):
+    def __init__(self):
+        self.name = "Town"
+        self.description = "A quaint little town with simple wood buildings."
+        self.options = "\n -Go to general store\n -Go to forest\n -Inventory"
+
+    def action(self, player):
+        self.location()
+        x = 0
+        while x == 0:
+            option = input("> ")
+            if option.lower() == ("go to general store"):
+                return general_store
+            elif option.lower() == ("go to forest"):
+                return forest
+            elif option.lower() == ("inventory"):
+                player.inventory()
+            else:
+                invalid()
+
+
+class GeneralStore(Location):
+    def __init__(self):
+        self.name = "General store"
+        self.description = "A cluttered little shop filled with many different odds and ends."
+        self.options = "\n -Buy\n -Sell\n -Inventory\n -Exit"
+
+    def action(self, player):
+        self.location()
+        x = 0
+        while x == 0:
+            option = input("> ")
+
+            if option.lower() == ("inventory"):
+                player.inventory()
+
+            elif option.lower() == ("buy"):
+                self.buy(player)
+
+            elif option.lower() == ("sell"):
+                self.sell(player)
+
+            elif option.lower() == ("give coin"): # SHH lol
+                player.coin = player.coin + 100
+
+            elif option.lower() == ("exit"):
+                return town
+
+            else:
+                invalid()
+
+    def buy(self, player):
+        x = 0
+        while x == 0:
+            print("Item values are displayed after their name.")
+            print("To purchase an item, simply type in its name.")
+            print("")
+            Items_v7.item_values(Items_v7.item_list)
+            option = input("> ")
+            input_lower = option.lower()
+
+            if option.lower() == "inventory":
+                player.inventory()
+
+            elif input_lower in Items_v7.item_dict:
+                player.buy_item(Items_v7.item_dict[input_lower])
+
+            elif option.lower() == ("exit"):
+                break
+
+            else:
+                invalid()
+
+    def sell(self, player):
+        x = 0
+        while x == 0:
+            print("To sell an item, simply type its name.")
+            print("Sold items go for half their default value.")
+            print("")
+            option = input("> ")
+            input_lower = option.lower()
+
+            if option.lower() == ("inventory"):
+                player.inventory()
+
+            elif input_lower in Items_v7.item_dict:
+                player.sell_item(Items_v7.item_dict[input_lower])
+
+            elif option.lower() == ("exit"):
+                break
+
+            else:
+                print("Invalid command, please try again.")
+
+class RockyHillside(Location):
+    def __init__(self):
+        self.name = "Rocky Hillside"
+        self.description = "A rocky outcropping surrounded by gravel and slabs of stone."
+        self.options = "\n -Mine for stone\n -Mine for copper ore\n -Go to forest\n -Inventory"
+
+    def action(self, player):
+        self.location()
+        x = 0
+        while x == 0:
+            option = input("> ")
+
+            if option.lower() == ("mine for stone"):
+                player.mine_ore(Items_v7.stone)
+
+            elif option.lower() == ("mine for copper"):
+                player.mine_ore(Items_v7.copper_ore)
+
+            elif option.lower() == ("inventory"):
+                player.inventory()
+
+            elif option.lower() == ("go to forest"):
+                return forest
+
+            else:
+                invalid()
+
+class Clearing(Location):
+    def __init__(self):
+        self.name = "Clearing"
+        self.description = "A clearing in the middle of the forest, the perfect spot to build a house."
+        self.options = "\n -Make hay\n -Collect hay\n -Go to forest\n - Go to farm\n -Inventory \n -Go home."
+
+    def action(self, player):
+        self.location()
+        x = 0
+        while x == 0:
+            option = input("> ")
+
+            if option.lower() == ("make hay"):
+                player.make_hay()
+
+            elif option.lower() == ("collect hay"):
+                player.collect_hay()
+
+            elif option.lower() == ("inventory"):
+                player.inventory()
+
+            elif option.lower() == ("go to forest"):
+                return forest
+
+            elif option.lower() == ("go home"):
+                return home
+
+            elif option.lower() == ("go to farm"):
+                return farm
+
+            elif option.lower() == ("rest"):
+                player.rest()
+
+            else:
+                invalid()
+
+class Farm(Location):
+    field_1 = "rough"
+    field_2 = "rough"
+    field_3 = "rough"
+    field_4 = "rough"
+    field_1_space = []
+    field_2_space = []
+    field_3_space = []
+    field_4_space = []
+
+    def __init__(self):
+        self.name = "Farm"
+        self.description = "A flat plane in the clearing, perfect for farming."
+        self.options = "\n -Plow field\n -Sow field\n -Harvest fields\n -Go to clearing\n -Inventory \n -Go home."
+
+    def action(self, player):
+        self.location()
+
+        x = 0
+        while x == 0:
+            option = input("> ")
+
+            if option.lower() == ("inventory"):
+                player.inventory()
+
+            elif option.lower() == ("go to clearing"):
+                return clearing
+
+            elif option.lower() == ("plow field"):
+                Farm.plow_field(player)
+
+            elif option.lower() == ("sow field"):
+                Player_v7.Player.select_field(player)
+
+            elif option.lower() == ("harvest field"):
+                Player_v7.Player.timer_collect(player, Farm.field_1_space)
+                Player_v7.Player.timer_collect(player, Farm.field_2_space)
+                Player_v7.Player.timer_collect(player, Farm.field_3_space)
+                Player_v7.Player.timer_collect(player, Farm.field_4_space)
+
+            elif option.lower() == ("go home"):
+                return home
+
+            else:
+                invalid()
+
+    def plow_field(self):
+        if Farm.field_1 == "rough":
+            Farm.field_1 = "plowed"
+            print("You plowed the first field.")
+
+        elif Farm.field_2 == "rough":
+            Farm.field_2 = "plowed"
+            print("You plowed the second field.")
+
+        elif Farm.field_3 == "rough":
+            Farm.field_3 = "plowed"
+            print("You plowed the third field.")
+
+        elif Farm.field_4 == "rough":
+            Farm.field_4 = "plowed"
+            print("You plowed the fourth field.")
+        else:
+            print("You have no more fields that need plowing, you can only have 4 fields.")
+
+
+
+
+
+
+#####################
+#### PLAYER HOME ####
+#####################
+
+
+class Home(Location):
+    def __init__(self):
+        self.name = "Home"
+        self.description = "A simple little shack made of stacked logs."
+        self.options = "\n -Go to clearing \n - Order upgrades \n -Install upgrades \n -Build upgrades \n -Inventory \n -Character sheet"
+        print("")
+        print("Installed upgrades:")
+        for var in Items_v7.installed_upgrades_list:
+            print(var.name)
+
+    def action(self, player):
+        self.location()
+        x = 0
+        while x == 0:
+            option = input("> ")
+            if option.lower() == ("go to clearing"):
+                return clearing
+
+            elif option.lower() == ("order upgrades"):
+                self.order_upgrades(player)
+
+            elif option.lower() == ("install upgrades"):
+                self.install_upgrades(player)
+
+            elif option.lower() == ("uninstall upgrades"):
+                self.uninstall_upgrades(player)
+
+            elif option.lower() == ("build upgrades"):
+                self.build_upgrades(player)
+
+            elif option.lower() == ("inventory"):
+                player.inventory()
+
+            elif option.lower() == ("character sheet"):
+                player.character_sheet()
+
+            else:
+                invalid()
+
+
+    def order_upgrades(self, player):
+        x = 0
+        while x == 0:
+            print("Item values are displayed after their name.")
+            print("To purchase an item, simply type in its name.")
+            print("")
+            Items_v7.item_values(Items_v7.house_upgrades_list)
+            option = input("> ")
+            input_lower = option.lower()
+
+            if option.lower() == "inventory":
+                player.inventory()
+
+            elif input_lower in Items_v7.house_upgrades_dict:
+                player.buy_item(Items_v7.house_upgrades_dict[input_lower])
+
+            elif option.lower() == ("exit"):
+                break
+
+            else:
+                invalid()
+
+    def install_upgrades(self, player):
+        print("To install an upgrade, simply type in it's name.")
+        print("")
+        print("Upgrades ready to be installed: ")
+        for var in player.items:
+            if var in Items_v7.installed_upgrades_list:
+                print(var.name)
+            else:
+                if var not in Items_v7.house_upgrades_list:
+                    print("You currently don't have any upgrades ready to be installed.")
+
+        option = input("Item Name: ")
+
+        if option.lower() == ("simple workbench"):
+            if Items_v7.simple_workbench in player.items:
+                player.items.remove(Items_v7.simple_workbench)
+                Items_v7.installed_upgrades_list.append(Items_v7.simple_workbench)
+                print("You installed the simple workbench.")
+            else:
+                print("You do not have this item.")
+
+    def uninstall_upgrades(self, player):
+        print("To uninstall an upgrade, simply type it's name.")
+        print("")
+        print("Items available to uninstall:")
+        for var in Items_v7.installed_upgrades_list:
+            print(var.name)
+
+        option = input("Item name: ")
+
+        if option.lower in Items_v7.installed_upgrades_dict:
+            if option.lower() == ("simple workbench"):
+                Items_v7.installed_upgrades_list.remove(Items_v7.simple_workbench)
+                player.items.append(Items_v7.simple_workbench)
+        else:
+            print("You do not have this item installed.")
+
+    def build_upgrades(self, player):
+        print("To build an upgrade, simply type its name.")
+        print("")
+        print("Buildable upgrades, their required tools, and materials.: ")
+        print("Simple Workbench: Hammer, 20 nails, 20 wood boards. ")
+
+        option = input("What would you like to build?: ")
+
+        if option.lower() == ("simple workbench"):
+            if player.items.count(Items_v7.wood_board) >= 20 and player.items.count(Items_v7.iron_nail) >= 20:
+                y = 0
+                while y < 20:
+                    player.items.remove(Items_v7.wood_board)
+                    player.items.remove(Items_v7.iron_nail)
+                player.items.append(Items_v7.simple_workbench)
+            else:
+                print("You do not have the items required to craft this item.")
+
+
+
+# create singleton constants
+forest = Forest()
+general_store = GeneralStore()
+town = Town()
+rocky_hillside = RockyHillside()
+clearing = Clearing()
+home = Home()
+farm = Farm()
+
+
+########## Player_v7 ##########
+
+#!/usr/bin/env python3
+import Items_v7
+import random
+import Locations_v7
+
+from Skills_v7 import scavenging, strength
+from Functions_v7 import sleep, active_timers, complete_timers, hay_timer, Timer, mushroom_timer, potato_timer, carrot_timer, cabbage_timer, timer_list
+
+
+class Player:
+    def __init__(self, name, coin, energy, health, armour):
+        self.name = name
+        self.skills = [scavenging, strength] # set initial skills
+        self.coin = coin
+        self.items = Items_v7.initial_items.copy() # set initial items
+        self.energy = energy
+        self.health = health
+        self.armour = armour
+        self.timers = []
+        self.location = None
+
+    def rest(self):
+        print("You rest out in the open, regaining some energy, but losing some health in the process.")
+        self.energy = 50
+        self.health = self.health - 10
+        Timer.timer_up(self)
+
+
+    def one_turn(self):
+        self.location = self.location.action(self)
+        print()
+
+    def inventory(self):
+        print("Health: " + str(self.health))
+        print("Energy: " + str(self.energy))
+        print("Coin: " + str(self.coin))
+        print("")
+        print("ITEMS")
+        print("")
+        self.inventory_items()
+
+    def inventory_items(self):
+        for item_var in set(self.items):
+            print(item_var.name + ": " + str(self.items.count(item_var)))
+
+    def character_sheet(self):
+        print("Player name: " + self.name)
+        print("")
+        print("Active timers:")
+        for y in set(self.timers):
+            print(y + " day " + str(self.timers.count(y)))
+        print("")
+        print("Skills:")
+        for var in set(self.skills):
+            print(var.name + " level " + str(self.skills.count(var)) + ": " + var.description)
+
+    # these methods can be here or you could design them to be in the respective location classes
+    def cut_tree(self):
+        if self.items.count(Items_v7.axe) >= 1:
+            sleep(11 - self.skills.count(strength)) # this will cause an error when the time goes negative
+            self.items.append(Items_v7.log)
+            self.energy = self.energy - 10
+            print("You cut down a tree using your axe, and you receive one wood log!")
+        elif self.items.count(Items_v7.machete) >= 1:
+            sleep(11 - self.skills.count(strength))
+            self.items.append(Items_v7.log)
+            self.energy = self.energy - 20
+            print("You cut down a tree using your machete, and you receive one wood log!")
+        else:
+            print("You have nothing with which to chop the wood.")
+
+    def mine_ore(self, ore):
+        if self.items.count(Items_v7.pickaxe) >= 1:
+            sleep(10)
+            self.items.append(ore)
+            self.energy = self.energy - 10
+            if ore == Items_v7.stone:
+                print("You manage to break a slap of stone free from the surrounding rock.")
+            else:
+                print("After some effort, you manage to harvest a decent amount of " + ore.name + ".")
+
+    def search(self, item):
+        probability = ['find', 'nothing']
+        result = random.choices(probability, weights=[self.skills.count(scavenging), 4], k=1)[0]
+        if result == 'find':
+            sleep(5)
+            self.items.append(item)
+            print("You found a " + item.description + "!")
+        elif result == 'nothing':
+            sleep(5)
+            print("You found nothing of value")
+        else:
+            print("Error, command incorrect. BAD PROGRAMMER!")
+
+    def buy_item(self, item):
+        if self.coin >= item.value:
+            self.items.append(item)
+            self.coin = self.coin - item.value
+            print("Bought one", item.name)
+        else:
+            print("You don't have enough coin!")
+
+    def sell_item(self, item):
+        if self.items.count(item) > 0:
+            self.items.remove(item)
+            self.coin = self.coin + item.value
+            print("Sold one", item.name)
+        else:
+            print("You don't have any to sell!")
+
+    def make_hay(self):
+        if self.items.count(Items_v7.scythe) >= 1:
+            if hay_timer in active_timers:
+                print("You already have hay drying.")
+
+            else:
+                active_timers.append(hay_timer)
+                print("You use your scythe to cut the surrounding gas, leaving it to dry a day or two.")
+        else:
+            print("You require a scythe to make hay.")
+
+    def collect_hay(self):
+        if hay_timer in complete_timers:
+            x = 0
+            while x < hay_timer.amount:
+                self.items.append(Items_v7.hay)
+                x = x + 1
+            complete_timers.remove(hay_timer)
+            print("You collect 10 piles of dry hay.")
+        elif hay_timer in active_timers:
+            print("Your hay isn't finished drying yet.")
+        else:
+            print("You do not currently have any hay drying.")
+
+    def select_field(self):
+
+        for var in Items_v7.seed_list:
+            if var in self.items:
+                print(var.name)
+        option = input("What seed do you wish to plant?")
+
+        if option.lower() in Items_v7.seed_dict:
+            seed = Items_v7.item_dict[option.lower()]
+
+            if Locations_v7.Farm.field_1 == "plowed":
+                Player.plant_seed(self, seed, Locations_v7.Farm.field_1_space)
+                Locations_v7.Farm.field_1 = "rough"
+            elif Locations_v7.Farm.field_2 == "plowed":
+                Player.plant_seed(self, seed, Locations_v7.Farm.field_2_space)
+                Locations_v7.Farm.field_2 = "rough"
+            elif Locations_v7.Farm.field_3 == "plowed":
+                Player.plant_seed(self, seed, Locations_v7.Farm.field_3_space)
+                Locations_v7.Farm.field_3 = "rough"
+            elif Locations_v7.Farm.field_4 == "plowed":
+                Player.plant_seed(self, seed, Locations_v7.Farm.field_4_space)
+                Locations_v7.Farm.field_4 = "rough"
+            else:
+                print("You have no fields suitable for sowing.")
+        else:
+            print("Not valid seed type.")
+
+
+    def plant_seed(self, seed, list):
+        if seed in Items_v7.seed_list:
+            if self.items.count(seed) > 0:
+                self.items.remove(seed)
+                list.append(seed.timer)
+            else:
+                print("You do not have any " + seed.name + " to plant.")
+
+    def timer_collect(self, collection_area):
+        for var in collection_area:
+            if var.current >= var.limit:
+                x = 0
+                while x < var.amount:
+                    self.items.append(var.payout)
+                    x = x + 1
+                print("You have collected " + var.amount + " " + var.payout)
+
+
+
+    #### CRAFTING FUNCTIONS ####
+
+    def craft_wood_planks(self):
+        x = input("How many planks do you wish to craft?: ")
+        if x >= self.items.count(Items_v7.log):
+            y = 0
+            while y < x:
+                self.items.append(Items_v7.wood_board)
+                self.items.append(Items_v7.wood_scrap)
+                self.items.append(Items_v7.wood_scrap)
+                self.items.remove(Items_v7.log)
+                y = y + 1
+            print("You use your saw to cut " + str(x) + " logs into " + str(x) + " wood boards.")
+        else:
+            print("You do not have enough logs to craft that many boards.")
+
+
+########## Skills_v7 ##########
+
+class Skills:
+    def __init__(self, name, description):
+        self.name = name
+        self.description = description
+
+scavenging = Skills("Scavenging", "The ability to find things of use/value in nature.")
+strength = Skills("Strength", "An individuals raw physical power.")
