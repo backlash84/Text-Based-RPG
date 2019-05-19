@@ -1,0 +1,109 @@
+import Items_folder
+
+cutting_tools = [Items_folder.stone_knife, Items_folder.bone_knife]
+
+class Crafting_recipe:
+    def __init__(self, name, equipment, tools, variable_tools, resources, resource_amounts, output, output_amounts):
+        self.name = name
+        self.equipment = equipment
+        self.tools = tools
+        self.variable_tools = variable_tools
+        self.resources = resources
+        self.resource_amounts = resource_amounts
+        self.output = output
+        self.output_amounts = output_amounts
+
+def craft_item(recipe):
+    enough_epuipment = True
+    enough_tools = True
+    enough_variable = True
+    enough_resources = True
+
+    if recipe.equipment != []:
+        for var in recipe.equipment:
+            if Items_folder.installed_upgrades_list.count(var) != 0:
+                pass
+            else:
+                enough_epuipment = False
+    else:
+        pass
+    print("Equipment checked")
+    
+    if recipe.tools != []:
+        for var2 in recipe.tools:
+            if inventory.count(var2) != 0:
+                pass
+            else:
+                enough_tools = False
+    else:
+        pass
+    print("Tools checked")
+    
+    if recipe.variable_tools != []:
+        x = 0
+        a = 0
+        b = 1
+        c = recipe.variable_tools[a]
+        d = recipe.variable_tools[b]
+        while x > len(recipe.variable_tools):
+            for var9 in c[d:]:
+                if var9 in inventory:
+                    a = a + 2
+                    b = b + 2
+                    x = x + 2
+                else:
+                    enough_variable = False
+    else:
+        pass
+    print("Variable tools checked.")
+    
+    if recipe.resources !=[]:
+        for var3 in recipe.resources:
+            if inventory.count(var3) < recipe.resource_amounts[var3]:
+                enough_resources = False
+    else:
+        pass
+    print("Resources checked.")
+    
+    if enough_epuipment == True:
+        if enough_tools == True:
+            if enough_variable == True:
+                if enough_resources == True:
+                    for var4 in recipe.resources:
+                        x = 0
+                        while x < recipe.resource_amounts[var4]:
+                            inventory.remove(var4)
+                            x = x + 1
+                    for var5 in recipe.output:
+                        y = 0
+                        while y < recipe.output_amounts[var5]:
+                            inventory.append(var5)
+                            y = y + 1
+                else:
+                    print("You do not have the required resources for this recipe")
+            else:
+                print("You do not have the required tools for this recipe")
+        else:
+            print("Your equipment isn't good enough quality for this recipe.")
+    else:
+        print("You do not have the required equipment for this recipe.")
+
+inventory = []
+
+simple_fishing_rod_recipe = Crafting_recipe("Simple fishing rod", [], [], [cutting_tools, 1], [Items_folder.wooden_dowel,
+                    Items_folder.string, Items_folder.small_bones], {Items_folder.wooden_dowel: 1, Items_folder.string: 1, Items_folder.small_bones: 1},
+                    [Items_folder.simple_fishing_rod], {Items_folder.simple_fishing_rod: 1})
+
+#### START ####
+inventory.append(Items_folder.stone_knife)
+inventory.append(Items_folder.wooden_dowel)
+inventory.append(Items_folder.string)
+inventory.append(Items_folder.small_bones)
+
+for var in inventory:
+    print(var.name)
+
+craft_item(simple_fishing_rod_recipe)
+
+for var in inventory:
+    print(var.name)
