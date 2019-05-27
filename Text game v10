@@ -1,0 +1,1347 @@
+#This is just supposed to be a basic outline of the code I've written for my little game. It's still a work in progress.
+#I've removed a ton of content that would just clutter things, keeping 1 of each just to serve as an example.
+#I'm going to comment explinations above each piece that isn't completely obvious.
+
+#Oh, and before you say it, I know I suck at github and am basically using it as a paste bin, I'm going to learn how to use it
+#propperly soon, just not now. For the time being different files will be marked with ten #s, on either side of the name.
+
+########## Main_file ##########
+
+import os
+import sys
+import time
+import Items_folder
+import Player_folder
+
+from Player_folder import Player
+from Locations_folder import forest
+from Functions_folder import invalid
+
+#This part is pretty self explanitory. The start menu leading into the main loop of the game.
+
+def start_menu():
+    os.system("cls")
+    print('''Welcome to my game!
+    1: start
+    2: help
+    3: quit   ''')
+
+    x = 0
+    while x == 0:
+        option = input("> ")
+        if option.lower() == ("start"):
+            break
+        elif option.lower() == ("help"):
+            print("Help section goes here.")
+        elif option.lower() == ("quit"):
+            sys.exit()
+        else:
+            invalid()
+#You can see the player class in the class section, but the main loop basically checks player energy and health.
+#If they run out of energy, they collapse and basically sleep outside, resulting in damage to their health (exposure)
+#and sends them back to their starting location.
+
+#If however they run out of health, they get the game over screen for five seconds before the application closes.
+
+def main():
+    #### CHARACTERS ####
+    start_menu()
+    main_character = Player("Adventurer", 100, 100, 100, Player_folder.main_character_equipment, Player_folder.main_character_weapon)
+    main_character.location = forest # set initial location
+
+    while main_character.health > 0:
+        if main_character.energy <= 0:
+            print("You collapse due to lack of energy, you lose 10 health.")
+            main_character = main_character.health - 10
+            main_character.energy = 50
+            Items_folder.timer_up()
+
+        main_character.one_turn()
+
+
+    print("        GAME OVER        ")
+    print("Your health reached zero.")
+    time.sleep(5)
+    sys.exit()
+
+if __name__ == "__main__":
+    while True:
+        main()
+        
+  ########## Player_folder ##########
+  
+      import Items_folder
+import random
+import Locations_folder
+import Skills_folder
+import Crafting_folder
+
+from Functions_folder import sleep
+
+#Below is just lists that hold the different equipment slots, seemed the most direct and simple way to do things.
+
+main_character_head = []
+main_character_torso = []
+main_character_hands = []
+main_character_feet = []
+main_character_back = []
+main_character_weapon = []
+
+# This combining of everything is in prep for combat functions I don't have prepped yet, then it will be easy to total up defense.
+
+main_character_equipment = []
+main_character_equipment.extend(main_character_head)
+main_character_equipment.extend(main_character_torso)
+main_character_equipment.extend(main_character_hands)
+main_character_equipment.extend(main_character_feet)
+main_character_equipment.extend(main_character_back)
+
+# The player class is pretty straight forward, it has a ton of functions, but the class itself is pretty straight forward.
+# The "Coin" arguement in the class was from an earlier version that had shops, but I decided to make things more survival
+#oriented, I might make a version with shops again, so I just leave it as is.
+
+class Player:
+    def __init__(self, name, coin, energy, health, armour, weapon):
+        self.name = name
+        self.skills = [Skills_folder.scavenging, Skills_folder.strength] # set initial skills
+        self.coin = coin
+        self.items = Items_folder.initial_items.copy() # set initial items
+        self.items_dict = {item_var.name.lower():item_var for item_var in self.items}
+        self.energy = energy
+        self.health = health
+        self.armour = armour
+        self.weapon = weapon
+        self.location = None
+
+# This is basically the same as the collapsing in the main loop, but I needed a rest function to check other functions, so
+#right now it's pretty basic. I intend to add energy buffs depenant on the quality of your shelter, so if you had a hut you
+#could start with 70 energy, giving you more time to perform tasks before having to return home. The health subtraction is going
+#to only be applied if you don't eat, something I have to add still.
+
+    def rest(self):
+        if self.location != Locations_folder.home:
+            print("You rest out in the open, regaining some energy, but losing some health in the process.")
+            self.energy = 50
+            self.health = self.health - 10
+            Items_folder.timer_up()
+
+        else:
+            print("Put comfort calculation buffs here.")
+            
+# I'll be honest, this is u/socal_nerdtastic's code, don't understand how it works entirely with the rest of the stuff, but it does.
+# Guy is seriously great, went through all my code and fixed things.
+
+    def one_turn(self):
+        self.location = self.location.action(self)
+        print()
+
+# Basic leveling function. Going to expand upon it later so certain actions only give exp at certain levels, but it works alright
+#right now.
+
+    def leveling(self, skill):
+        if skill.experience >= skill.limit:
+            self.skills.append(skill)
+            skill.experience = 0
+            skill.limit = skill.limit * 1.5
+            print("You have leveled up your " + skill.name + " skill!")
+        else:
+            skill.experience = skill.experience + 1
+
+# Simple random object collector. Mainly going to be used for scavenging in the forest, allowing you to find random seeds that
+#you can plant once you get a field going.
+
+    def collect_random_object(self, list):
+        var = random.choice(list)
+        self.items.append(var)
+        print("You collected one " + var.name)
+
+# This was a bitch to code... like, hours put into this to get it to work. Probably overly complex, but I'm still proud of it.
+# It works using arguements from the crafting_recipe class in the Crafting_folder.
+
+    def craft_item(self, recipe):
+        equipment_requirements = False
+        if recipe.equipment != []:    #If recipe equipment isn't blank, continue.
+            for var in recipe.equipment: 
+                if var in Items_folder.installed_upgrades_list:    #These being installed in the player house.
+                    equipment_requirements = True
+                else:
+                    pass
+        else:
+            equipment_requirements = True    # IF there's no equipment required it just switches the boolean to True
+
+# Variable equipment is for things that multiple installed Objects can do the job. A clay stove will cook just as well as
+#a stone one. At the same time, some recipes will require higher quality, which you can see how I limit in the Crafting_folder
+
+        variable_equipment = False
+        if recipe.variable_equipment != []:
+            for vara in recipe.variable_equipment:  # The equipment has it's own list from poorest to best quality. 
+                newlist = vara        
+                for varb in newlist:
+                    if varb in Items_folder.installed_upgrades_list:
+                        variable_equipment = True
+                    else:
+                        pass
+        else:
+            variable_equipment = True
+
+# Tools being equipment in your characters inventory instead of installed in their house.
+
+        tool_requirements = False
+        if recipe.tools != []:
+            for var2 in recipe.tools:
+                if var2 in self.items:
+                    tool_requirements = True
+                else:
+                    pass
+        else:
+            tool_requirements = True
+
+        variable_tools = False
+        if recipe.variable_tools != []:
+            for var3 in recipe.variable_tools:
+                newlist = var3
+                for var4 in newlist:
+                    if var4 in self.items:
+                        variable_tools = True
+                    else:
+                        pass
+        else:
+            variable_tools = True
+
+# Made this one have a default boolean as True, then if one ingredient is wrong it will change (and stay) False.
+
+        resource_requirements = True
+        if recipe.resources != []:
+            x = 0
+            while x < len(recipe.resources):
+                for var5 in recipe.resources:
+                    if self.items.count(var5) >= recipe.resource_amounts[var5]:
+                        x = x + 1
+                    else:
+                        resource_requirements = False
+                        x = x + 1
+        else:
+            pass
+
+# This part checks to see if all four stages were passed, and if not, triggers the else: condition explaining
+#to the player why they couldn't craft the item they want to.
+
+        if equipment_requirements == True:
+            if variable_equipment == True:
+                if tool_requirements == True:
+                    if variable_tools == True:
+                        if resource_requirements == True:
+                            for var6 in recipe.resources:
+                                x = 0
+                                while x < recipe.resource_amounts[var6]:
+                                    self.items.remove(var6)
+                                    x = x + 1
+                            for var7 in recipe.output:
+                                y = 0
+                                while y < recipe.output_amounts[var7]:
+                                    self.items.append(var7)
+                                    y = y + 1
+                            print("Crafting of " + recipe.name + " complete.")
+                        else:
+                            print("You do not have enough resources to craft a " + recipe.name)
+                    else:
+                        print("You do not have the proper tools to craft " + recipe.name)
+                else:
+                    print("You do not have the proper tools to craft " + recipe.name)
+            else:
+                print("You do not have the proper equipment installed in your home to craft " + recipe.name)
+        else:
+            print("You do not have the proper equipment installed in your home to craft " + recipe.name)
+
+# Just displays the .name of all the items in the persons inventory.
+
+    def inventory(self):
+        print("Health: " + str(self.health))
+        print("Energy: " + str(self.energy))
+        print("")
+        print("ITEMS")
+        print("")
+        self.inventory_items()
+
+    def inventory_items(self):
+        for var in self.items:
+            print(var.name + ": " + self.items.count(var))
+
+# Active timers are for time dependent things like crops. Will show the person the name of what's growing. I have a master list of
+#locations where things can grow (the first var), and then the item growing in those locations (var2).
+
+    def character_sheet(self):
+        print("Player name: " + self.name)
+        print("")
+        print("Active timers:")
+        for var in Items_folder.timer_storage:
+            for var2 in var:
+                print(var2.name + ": " + str(var2.current) + "/" + str(var2.limit))
+        print("")
+        print("Skills:")
+        for var in set(self.skills):
+            print(var.name + " level " + str(self.skills.count(var)) + ": " + var.description)
+
+# A more controlled version of collect_random():, allowing for a persons to gain experience, and for levels
+#to actually influence probability of finding something.
+
+    def search(self, list, difficulty, skill):
+        probability = ['find', 'nothing']
+        result = random.choices(probability, weights=[self.skills.count(skill), difficulty], k=1)[0]
+        if result == 'find':
+            sleep(5)
+            Player.collect_random_object(self, list)
+            Player.leveling(self, skill)
+
+        elif result == 'nothing':
+            sleep(5)
+            print("You found nothing of value")
+
+        else:
+            print("Error, command incorrect. BAD PROGRAMMER!")
+
+# Used for checking to see if fields are ready for planting, and then change it to "rough" until the field is collected from
+#and plowed.
+
+    def select_field(self):
+
+        for var in Items_folder.seed_list:
+            if var in self.items:
+                print(var.name)
+        option = input("What seed do you wish to plant?")
+
+        if option.lower() in Items_folder.seed_dict:
+            seed = Items_folder.item_dict[option.lower()]
+
+            if Locations_folder.Farm.field_1 == "plowed":
+                Player.plant_seed(self, seed, Items_folder.field_1_space)
+                Locations_folder.Farm.field_1 = "rough"
+                print("You have successfully planted " + seed.name)
+            elif Locations_folder.Farm.field_2 == "plowed":
+                Player.plant_seed(self, seed, Items_folder.field_2_space)
+                Locations_folder.Farm.field_2 = "rough"
+                print("You have successfully planted " + seed.name)
+            elif Locations_folder.Farm.field_3 == "plowed":
+                Player.plant_seed(self, seed, Items_folder.field_3_space)
+                Locations_folder.Farm.field_3 = "rough"
+                print("You have successfully planted " + seed.name)
+            elif Locations_folder.Farm.field_4 == "plowed":
+                Player.plant_seed(self, seed, Items_folder.field_4_space)
+                Locations_folder.Farm.field_4 = "rough"
+                print("You have successfully planted " + seed.name)
+            else:
+                print("You have no fields suitable for sowing.")
+        else:
+            print("Not valid seed type.")
+
+
+    def plant_seed(self, seed, list):
+        if self.items.count(seed) > 0:
+            self.items.remove(seed)
+            list.append(seed.timer)
+        else:
+            print("You do not have any " + seed.name + " to plant.")
+
+# Since so far all this is used for is farming that's the only skill it's reliant on that's the only skill programmed in.
+
+    def timer_collect(self, collection_area):
+        for var in collection_area:
+            if var.current >= var.limit:
+                x = var.amount - (self.skills.count(Skills_folder.farming) * 2)
+                while x < var.amount:
+                    self.items.append(var.payout)
+                    x = x + 1
+                    var.current = 0
+                Player.leveling(self, Skills_folder.farming)
+                print("You have collected " + str(var.amount) + " " + str(var.payout.name))
+            elif var.current < var.limit:
+                print(var.name + " is not yet ready.")
+
+#Figured this would save time on the equipment screen below, since it's the same function for each equipment slot.
+
+    def equipped_item(self, position, type_list, type_dict):
+        if position == []:
+            print("Available items to equipped:")
+            for var in type_list:
+                if var in self.items:
+                    print(var.name)
+
+            option2 = input("What item do you wish to equipped? > ")
+            input_lower = option2.lower()
+
+#This is awesome code I wish I could take credit for, but u/socal_nerdtastic came up with, streamlines a lot.
+# It basically checks the dictonary of item lists for said item. If so, it can append/remove whatever I want in 
+#that list with one function. I've copied it for other things, so useful.
+
+            if input_lower in self.items_dict:
+                if input_lower in type_dict:
+                    position.append(self.items_dict[input_lower])
+                    self.items.remove(self.items_dict[input_lower])
+                else:
+                    print("The item you tried to equipped was not valid.")
+            else:
+                print("You do not have the item in your inventory.")
+        else:
+            print("You already have an item equippeded, remove it to equippeded another item.")
+
+# The equipment screen is a lot of code, but it basically just displays if I player has an item equiped to a slot, and
+#the stats of said item. 
+
+    def equipment_screen(self):
+        print("equipment screen")
+        print("")
+        if main_character_head != []:
+            for var_head in main_character_head:
+                print(
+                    "Head: " + var_head.name + ". armour: " + str(
+                        var_head.armour_rating) + " element protection: " + str(var_head.element_protection))
+        else:
+            print("Head: None")
+        print("")
+        if main_character_torso != []:
+            for var_torso in main_character_torso:
+                print(
+                    "Torso: " + var_torso.name + ". armour: " + str(
+                        var_torso.armour_rating) + " element protection: " + str(var_torso.element_protection))
+        else:
+            print("Torso: None")
+        print("")
+        if main_character_back != []:
+            ammo_count = None
+            for var_back in main_character_back:
+                if var_back.storage != []:
+                    for var2 in var_back.storage:
+                        ammo_count = var_back.storage.count(var2)
+                    x = 0
+                    while x == 0:
+                        for var2 in var_back.storage:
+                            ammo_type = var2.name
+                            x = 1
+                    print("Back: " + var_back.name + " capacity: " + str(
+                        var_back.capacity) + " ammo: " + ammo_type + ": " + str(ammo_count))
+                else:
+                    print("Back: " + var_back.name + " capacity: " + str(var_back.capacity) + " ammo: None")
+        else:
+            print("Back: None")
+        print("")
+        if main_character_hands != []:
+            for var_hands in main_character_hands:
+                print(
+                    "Hands: " + var_hands.name + ". armour: " + str(
+                        var_hands.armour_rating) + " element protection " + str(var_hands.element_protection))
+        else:
+            print("Hands: None")
+        print("")
+        if main_character_feet != []:
+            for var_feet in main_character_feet:
+                print(
+                    "Feet: " + var_feet.name + ". armour: " + str(
+                        var_feet.armour_rating) + ". element protection " + str(var_feet.element_protection))
+        else:
+            print("Feet: None")
+        print("")
+
+        if main_character_weapon != []:
+            for var_weapon in main_character_weapon:
+                print(
+                    "Weapon: " + var_weapon.name + ". damage: " + str(
+                        var_weapon.damage) + ". armour piercing: " + str(var_weapon.armour_piercing) + ". range: " + str(var_weapon.weapon_range))
+        else:
+            print("Weapon: None")
+        print("")
+
+        print("To equipped new items, type 'equipped' followed by the part of you you wished to equipped, (ex 'equipped head'.")
+        print("To unequipped items, type 'unequipped' followed by the part of you you wished to unequipped, (ex 'unequipped head'.")
+        print("To exit, type exit.")
+        x = 0
+        while x == 0:
+
+            option = input("> ")
+
+            if option.lower() == ("equipped head"):
+                Player.equipped_item(self, main_character_head, Items_folder.head_armour_list, Items_folder.head_armour_dict)
+
+            elif option.lower() == ("equipped torso"):
+                Player.equipped_item(self, main_character_torso, Items_folder.torso_armour_list, Items_folder.torso_armour_dict)
+
+            elif option.lower() == ("equipped back"):
+                Player.equipped_item(self, main_character_back, Items_folder.backpack_armour_list, Items_folder.backpack_armour_dict)
+
+            elif option.lower() == ("equipped hands"):
+                Player.equipped_item(self, main_character_hands, Items_folder.hands_armour_list, Items_folder.hands_armour_dict)
+
+            elif option.lower() == ("equipped feet"):
+                Player.equipped_item(self, main_character_feet, Items_folder.feet_armour_list, Items_folder.feet_armour_dict)
+
+            elif option.lower() == ("equipped weapon"):
+                Player.equipped_item(self, main_character_weapon, Items_folder.weapon_list, Items_folder.weapon_dict)
+
+            elif option.lower() == ("unequipped head"):
+                Player.unequipped_item(self, main_character_head)
+
+            elif option.lower() == ("unequipped torso"):
+                Player.unequipped_item(self, main_character_torso)
+
+            elif option.lower() == ("unequipped back"):
+                Player.unequipped_item(self, main_character_back)
+
+            elif option.lower() == ("unequipped hands"):
+                Player.unequipped_item(self, main_character_hands)
+
+            elif option.lower() == ("unequipped feet"):
+                Player.unequipped_item(self, main_character_feet)
+
+            elif option.lower() == ("unequipped weapon"):
+                Player.unequipped_item(self, main_character_weapon)
+
+            elif option.lower() == ("load ammo"):
+                if main_character_back != []:
+                    Player.load_ammo(self)
+                else:
+                    print("Equipped something to carry your ammo before loading.")
+
+            elif option.lower() == ("unload ammo"):
+                if main_character_back != []:
+                    Player.unload_ammo(self)
+                else:
+                    print("equipped the item you wish to unload before unloading.")
+
+            elif option.lower() == ("exit"):
+                x = 1
+
+            else:
+                print("Invalid command, please try again.")
+
+    def unequipped_item(self, position):
+        if position != []:
+            for var in position:
+                position.remove(var)
+                self.items.append(var)
+        else:
+            print("This spot currently has nothing equippeded")
+            
+     #This one was also tricky, follows the same basic logic as some of my other code.
+
+    def load_ammo(self):
+        option = input("What type of ammo would you like to load?")
+        input_lower = option.lower()
+        if input_lower in Items_folder.ammo_dict:
+            option2 = input("How many? ")
+            x = eval(option2)
+            if self.items.count(self.items_dict[input_lower]) >= x:
+                for var in main_character_back:
+                    y = 0
+                    while y < x:
+                        y = y + 1
+                        var.storage.append(self.items_dict[input_lower])
+                        self.items.remove(self.items_dict[input_lower])
+            else:
+                print("You do not have enough " + input_lower + " to load that many.")
+        else:
+            print("Not a valid type of ammo.")
+
+    def unload_ammo(self):
+        for var in main_character_back:
+            for var2 in var.storage:
+                x = len(var.storage)
+                y = 0
+                while y < x:
+                    var.storage.remove(var2)
+                    self.items.append(var2)
+                    y = y + 1
+        print("Successfully unloaded " + var.name)
+
+# Latest piece of code, still working it out, but it will allow the player to craft anything that doesn't require equipment
+#anywhere instead of just at home.
+
+    def simple_crafting(self):
+        print("CRAFTING SCREEN")
+        print("")
+        print("To craft an item, type it's name. This will also give a list of requirements.")
+        print("")
+        print("RECIPE LIST:")
+        for var in Crafting_folder.item_recipes_list:
+            if var.equipment and var.variable_equipment == []:
+                print(var.name)
+
+        option = input("> ")
+        input_lower = option.lower()
+
+        if input_lower in Crafting_folder.item_recipes_dict:
+            recipe = Crafting_folder.item_recipes_dict[input_lower]
+            if recipe.equipment and recipe.variable_equipment == []:
+                Player.craft_item(self, recipe)
+            else:
+                print("This recipe requires equipment to craft, go to your home to craft using installed equipment.")
+        else:
+            print("Not a valid recipe.")
+
+
+########## Skills_folder ##########
+
+# My least developed folder, pretty basic.
+
+class Skills:
+    def __init__(self, name, description, experience, limit):
+        self.name = name
+        self.description = description
+        self.experience = experience
+        self.limit = limit
+
+scavenging = Skills("Scavenging", "The ability to find things of use/value in nature.", 0, 20)
+
+
+skill_list = [scavenging, strength, carpentry, masonry, hunting, cooking, blacksmithing, pottery, tailoring, fishing,
+              butchering, archery, melee_combat, farming]
+
+########## Items_folder ##########
+
+# The generic item class still has a value and sell function from when the game had a buy/sell component.
+
+class Item:
+    def __init__(self, name, value, description):
+        self.name = name
+        self.value = (value)
+        self.sell = (value/2)
+        self.description = description
+
+# Seeds are like most items, but with their specific timer from the Timer class.
+
+class Seed(Item):
+    def __init__(self, name, value, description, timer):
+        super().__init__(name, value, description)
+        self.timer = timer
+
+class Weapon(Item):
+    def __init__(self, name, value, description, damage, armour_piercing, weapon_range):
+        super().__init__(name, value, description)
+        self.damage = damage
+        self.armour_piercing = armour_piercing
+        self.weapon_range = weapon_range
+
+# Armour rating is self explanitory, but the elemental protection is for colder area's that will have more valuable ores to mine.
+
+class Armour(Item):
+    def __init__(self, name, value, description, armour_rating, element_protection):
+        super().__init__(name, value, description)
+        self.armour_rating = armour_rating
+        self.element_protection = element_protection
+
+# Says backpack but it's basically any item that carries stuff, mostly used for quivers that hold arrows.
+
+class Backpack(Item):
+    def __init__(self, name, value, description, capacity, storage):
+        super().__init__(name, value, description)
+        self.capacity = capacity
+        self.storage = storage
+
+# Animals! I'm wanting there to be an animal breeding aspect to the game, yet to impliment, but it's on the to do list.
+
+class Animal(Item):
+    def __init__(self, name, value, description, corpse):
+        super().__init__(name, value, description)
+        self.corpse = corpse
+
+# Wanting to make it that you can eat 3 times a day, and if you don't eat at least once, you lose health.
+
+class Food(Item):
+    def __init__(self, name, value, description, health_buff, energy_buff):
+        super().__init__(name, value, description)
+        self.health_buff = health_buff
+        self.energy_buff = energy_buff
+
+# The energy buff means that the better the shelter, the more energy you have when you awaken.
+# Space is for the amount of equipment you can have installed at one time, like stoves, anvils, grinding wheel.
+
+class Shelter(Item):
+    def __init__(self, name, value, description, energy_buff, space):
+        super().__init__(name, value, description)
+        self.energy_buff = energy_buff
+        self.space = space
+
+# The timers are for things like farming crops, but I'm also going to use it for chickens laying eggs and certain animals
+#producing milk. Limit is when the timer is ready, current is how many days it's been active.
+
+class Timer:
+    def __init__(self, name, limit, current, payout, amount):
+        self.name = name
+        self.limit = limit
+        self.current = current
+        self.payout = payout
+        self.amount = amount
+
+def timer_up():
+    for var in timer_storage:
+        for var2 in var:
+            var2.current = var2.current + 1
+
+
+
+
+#### WEAPON ####
+wooden_club = Weapon("Wooden club", 0, "A heavy, blunt piece of wood, useful for crushing skulls.", 0, 0, 0)
+
+
+weapon_list = [wooden_club, wooden_spear, stone_spear, stone_axe, stone_pick_axe, stone_knife, bone_knife, iron_knife,
+               machete, axe, scythe, small_bow]
+weapon_dict = {item_var.name.lower():item_var for item_var in weapon_list}
+
+#AMMO
+# Going to make an ammo class that effects damage, another to do list.
+wooden_arrow = Item("Wooden arrow", 0, "A wooden arrow with a sharpened tip, the most basic projectile, only effective against small animals.")
+
+
+#### ARMOUR ####
+armour_list = []
+armour_dict ={item_var.name.lower():item_var for item_var in armour_list}
+
+#Head
+fur_hat = Armour("Fur hat", 1, "Hat made of fur", 0, 10)
+
+head_armour_list = [fur_hat]
+head_armour_dict = {item_var.name.lower():item_var for item_var in head_armour_list}
+armour_list.extend(head_armour_list)
+
+#Backpack
+leather_quiver = Backpack("Leather Quiver", 0, "A leather quiver", 5, [])
+
+backpack_armour_list = [leather_quiver]
+backpack_armour_dict = {item_var.name.lower():item_var for item_var in backpack_armour_list}
+armour_list.extend(backpack_armour_list)
+
+
+
+#### TOOLS ####
+
+simple_fishing_rod = Item("Simple fishing rod", 2, "A simple fishing rod, used for catching light weight fish.")
+
+mining_tool_list = [stone_pick_axe, pick_axe]
+
+tool_list = [pick_axe, saw, hoe, hammer, clay_jug, wooden_bucket, mortar_and_pestle]
+tool_dict = {item_var.name.lower():item_var for item_var in tool_list}
+
+#### MATERIALS ####
+
+#RAW MATERIALS
+log = Item("Log", 1, "A simple wooden log.")
+
+
+raw_materials_list = [hay, log, stone, copper_ore, tin_ore, nickel_ore, lead_ore, aluminum_ore, gold_ore, silver_ore,
+                      platinum_ore, iron_ore, wood_scrap, coal, small_guts, medium_guts, large_guts, small_bones,
+                      medium_bones, large_bones, feather, small_hide, medium_hide, large_hide, raw_clay, deer_antlers,
+                      rock_salt]
+raw_materials_dict = {item_var.name.lower():item_var for item_var in raw_materials_list}
+
+#PROCESSED MATERIALS
+wood_board = Item("Wood board", 2, "A wooden board, useful in construction.")
+
+
+processed_materials_list = [wood_board, copper_ingot, tin_ingot, nickel_ingot, lead_ingot, aluminum_ingot, gold_ingot,
+                            silver_ingot, platinum_ingot, iron_ingot, charcoal, iron_nail, leather, string, wooden_dowel,
+                            refined_clay, granular_salt, ground_black_pepper]
+processed_materials_dict = {item_var.name.lower():item_var for item_var in processed_materials_list}
+
+#### FOOD ####
+
+#CROPS
+mushroom = Item("Mushroom", 3, "A forest mushroom, in good condition, commonly used in food and medicine.")
+
+
+crops_list = [mushroom, carrot, potato, cabbage, garlic, onion, bell_pepper, chili_pepper, cucumber, tomato, spinach,
+              broccoli, brussels_sprouts, pea_pods, ginger, asparagus, black_peppercorns]
+crops_dict = {item_var.name.lower():item_var for item_var in crops_list}
+
+#MEATS
+raw_chicken = Item("Raw chicken", 3, "A raw chicken, plucked and ready to cook.")
+
+
+meats_list = [raw_chicken, raw_beef, raw_pork, raw_rabbit, raw_goat, raw_venison, raw_lamb]
+meats_dict = {item_var.name.lower():item_var for item_var in meats_list}
+
+#COOKED
+cooked_chicken = Food("Cooked chicken", 6, "A bland piece of cooked, unseasoned chicken.", 3, 3)
+
+
+#### ANIMAL ####
+
+#OTHER
+cows_milk = Item("Cows milk", 4, "Fresh cows milk, can be drank or turned into cheese.")
+goats_milk = Item("Goats milk", 4, "Fresh goat milk, can be drank or turned into cheese.")
+sheeps_milk = Item("Sheeps milk", 4, "Fresh sheeps milk, can be drank or turned into cheese.")
+egg = Item("Egg", 1, "A fresh egg, used in cooking and baking.")
+
+#PREPPED
+plucked_chicken = Animal("Plucked chicken", 4, "A dead chicken (hen or rooster) that has been plucked and prepared for cooking, can be broken down further into chicken meat and small bones", None)
+
+
+#DEAD
+chicken_corpse = Animal("Chicken corpse", 4, "A dead chicken (hen or rooster), feathers and all. Must be prepared for cooking.", [small_guts, feather, plucked_chicken], {small_guts: 1, feather: 10, plucked_chicken: 1}, None)
+
+#ALIVE
+hen = Animal("Hen", 5, "A female chicken, good for producing eggs, killed for meat, and plucked for feathers.", [egg, feather], {egg: 1, feather: 1}, chicken_corpse)
+
+animal_list = [hen, rooster, cow, bull, hog, sow, male_rabbit, female_rabbit, male_goat, female_goat, chicken_corpse, bovine_corpse, pig_corpse, rabbit_corpse, goat_corpse,
+               plucked_chicken, processed_bovine_corpse, processed_pig_corpse, processed_rabbit_corpse, processed_goat_corpse]
+animal_dict = {item_var.name.lower():item_var for item_var in animal_list}
+
+
+#### TIMERS ####
+
+#CROPS
+hay_timer = Timer("Hay timer", 2, 0, hay, 10)
+
+#OTHER
+egg_timer = Timer("Egg timer", 1, 0, egg, 1)
+
+#### TIMERS ####
+
+timer_list = [hay_timer, mushroom_timer, carrot_timer, potato_timer, cabbage_timer, garlic_timer, onion_timer,
+              bell_pepper_timer, chili_pepper_timer, cucumber_timer, tomato_timer, spinach_timer, broccoli_timer,
+              brussels_sprouts_timer, pea_pods_timer, ginger_timer, asparagus_timer, cows_milk_timer,
+              goats_milk_timer, egg_timer, sheeps_milk_timer]
+timer_dict = {item_var.name.lower():item_var for item_var in timer_list}
+
+#TIMER STORAGE
+
+field_1_space = []
+field_2_space = []
+field_3_space = []
+field_4_space = []
+home_space = []
+home_lawn = []
+
+timer_storage = [field_1_space, field_2_space, field_3_space, field_4_space, home_space, home_lawn]
+
+#### SEEDS ####
+mushroom_spores = Seed("Mushroom spores", 1, "Spores from a wild mushroom, used for growing mushrooms.", mushroom_timer)
+
+
+seed_list = [mushroom_spores, carrot_seeds, potato_seeds, cabbage_seeds, garlic_seeds, onion_seeds, bell_pepper_seeds,
+             chili_pepper_seeds, cucumber_seeds, tomato_seeds, spinach_seeds, broccoli_seeds, brussels_sprout_seeds,
+             pea_pod_seeds, ginger_seeds, asparagus_seeds, black_pepper_seeds, cotton_seeds]
+seed_dict = {item_var.name.lower():item_var for item_var in seed_list}
+
+#### SHELTERS ####
+
+stone_foundation = False
+
+survival_shelter = Shelter("Survival shelter", 0, "The most basic form of shelter, just enough to keep your health from deteriorating", 0, 0)
+
+shelter_list = [survival_shelter, log_shack, small_log_cabin, large_log_cabin, medium_wooden_house, large_wooden_house]
+#### HOUSE UPRGADES ####
+
+wooden_butchers_table = Item("Wooden butchers table", 20, "A table built to support the weight of medium animals.")
+
+house_upgrades_list = [simple_workbench, simple_stove, iron_anvil]
+house_upgrades_dict = {item_var.name.lower():item_var for item_var in house_upgrades_list}
+
+test_item = Item("Test Item", 0, "An item for test purposes.")
+
+#Total lists
+item_list = tool_list + crops_list + seed_list + raw_materials_list + house_upgrades_list
+item_dict = {item_var.name.lower():item_var for item_var in item_list}
+initial_items = [machete, simple_brown_robes]
+
+#Installed house upgrades
+installed_upgrades_list = []
+installed_upgrades_dict = {item_var.name.lower():item_var for item_var in installed_upgrades_list}
+
+
+########## Locations_folder ##########
+
+import random
+import Items_folder
+import Player_folder
+import Skills_folder
+from Functions_folder import invalid
+
+
+
+class Location:
+    def location(self):
+        print("You are at the", self.name)
+        print(self.description)
+        print("Options:" + self.options)
+
+class Introduction(Location):
+    def __init__(self):
+        self.name = "Introduction"
+        self.description = "You recently celebrated your sixteenth birthday, although, 'celebrate' is probably a generous" \
+                           "word for what amounted to being kicked out of the orphanage you grew up in. However, you did " \
+                           "get a birthday gift of sorts... a handful of coins, part of which you used to buy yourself a " \
+                           "rusty old machete, good for survival and protection. With your 'new' machete and the clothes" \
+                           "on your back, you make your way into the forest to start your new life." \
+                           " "
+        self.options = "\n -Continue"
+
+    def action(self):
+        self.location()
+        x = 0
+        while x == 0:
+            option = input("> ")
+            if option.lower() == ("continue"):
+                return forest
+            else:
+                return forest
+
+
+class Forest(Location):
+    def __init__(self):
+        self.name = "Forest"
+        self.description = "The forest is densely packed with trees and rich with foliage."
+        self.options = "\n -Chop wood \n -Go to clearing \n -Go to rocky hillside \n -Search \n -Options"
+
+    def action(self, player):
+        self.location()
+        x = 0
+        while x == 0:
+            option = input("> ")
+            if option.lower() == ("chop wood"):
+                player.cut_tree()
+
+            elif option.lower() == ("go to clearing"):
+                return clearing
+
+            elif option.lower() == ("go to rocky hillside"):
+                return rocky_hillside
+
+            elif option.lower() == ("search"):
+                Player_folder.Player.search(player, Items_folder.crops_list, 4, Skills_folder.scavenging)
+
+            elif option.lower() == ("options"):
+                options_screen(player)
+
+            else:
+                invalid()
+
+
+class RockyHillside(Location):
+    def __init__(self):
+        self.name = "Rocky Hillside"
+        self.description = "A rocky outcropping surrounded by gravel and slabs of stone."
+        self.options = "\n -Mine for stone\n -Mine for copper ore\n -Go to forest\n -options"
+
+    def action(self, player):
+        self.location()
+        x = 0
+        while x == 0:
+            option = input("> ")
+
+            if option.lower() == ("mine for stone"):
+                Player_folder.Player.mine_ore(player, Items_folder.stone, 1)
+
+            elif option.lower() == ("mine for copper"):
+                Player_folder.Player.mine_ore(player, Items_folder.copper_ore, 4)
+
+            elif option.lower() == ("options"):
+
+                options_screen(player)
+
+            elif option.lower() == ("go to forest"):
+                return forest
+
+            else:
+                invalid()
+
+class Clearing(Location):
+    def __init__(self):
+        self.name = "Clearing"
+        self.description = "A clearing in the middle of the forest, the perfect spot to build a house."
+        self.options = "\n -Make hay\n -Collect hay\n -Go to forest\n -Go to farm\n -Options \n -Go home."
+
+    def action(self, player):
+        self.location()
+        x = 0
+        while x == 0:
+            option = input("> ")
+
+            if option.lower() == ("make hay"):
+                player.make_hay()
+
+            elif option.lower() == ("collect hay"):
+                player.collect_hay()
+
+            elif option.lower() == ("inventory"):
+                player.inventory()
+
+            elif option.lower() == ("go to forest"):
+                return forest
+
+            elif option.lower() == ("go home"):
+                return home
+
+            elif option.lower() == ("go to farm"):
+                return farm
+
+            elif option.lower() == ("rest"):
+                player.rest()
+
+            elif option.lower() == ("options"):
+                options_screen(player)
+
+            else:
+                invalid()
+
+class Farm(Location):
+    field_1 = "rough"
+    field_2 = "rough"
+    field_3 = "rough"
+    field_4 = "rough"
+
+    def __init__(self):
+        self.name = "Farm"
+        self.description = "A flat plane in the clearing, perfect for farming."
+        self.options = "\n -Plow field\n -Sow field\n -Harvest fields\n -Go to clearing\n -Inventory \n -Go home."
+
+    def action(self, player):
+        self.location()
+
+        x = 0
+        while x == 0:
+            option = input("> ")
+
+            if option.lower() == ("options"):
+                options_screen(player)
+
+            elif option.lower() == ("go to clearing"):
+                return clearing
+
+            elif option.lower() == ("plow field"):
+                Farm.plow_field(player)
+
+            elif option.lower() == ("sow field"):
+                Player_folder.Player.select_field(player)
+
+            elif option.lower() == ("harvest fields"):
+                Player_folder.Player.timer_collect(player, Items_folder.field_1_space)
+                Player_folder.Player.timer_collect(player, Items_folder.field_2_space)
+                Player_folder.Player.timer_collect(player, Items_folder.field_3_space)
+                Player_folder.Player.timer_collect(player, Items_folder.field_4_space)
+
+            elif option.lower() == ("go home"):
+                return home
+
+            else:
+                invalid()
+
+    def plow_field(self):
+        if Farm.field_1 == "rough":
+            Farm.field_1 = "plowed"
+            print("You plowed the first field.")
+
+        elif Farm.field_2 == "rough":
+            Farm.field_2 = "plowed"
+            print("You plowed the second field.")
+
+        elif Farm.field_3 == "rough":
+            Farm.field_3 = "plowed"
+            print("You plowed the third field.")
+
+        elif Farm.field_4 == "rough":
+            Farm.field_4 = "plowed"
+            print("You plowed the fourth field.")
+        else:
+            print("You have no more fields that need plowing, you can only have 4 fields.")
+
+
+
+
+
+
+#####################
+#### PLAYER HOME ####
+#####################
+
+
+class Home(Location):
+    def __init__(self):
+        self.name = "Home"
+        self.description = "A simple little shack made of stacked logs."
+        self.options = "\n -Go to clearing \n - Order upgrades \n -Install upgrades \n -Build upgrades \n -Inventory \n -Options"
+        print("")
+        print("Installed upgrades:")
+        for var in Items_folder.installed_upgrades_list:
+            print(var.name)
+
+    def action(self, player):
+        self.location()
+        x = 0
+        while x == 0:
+            option = input("> ")
+            if option.lower() == ("go to clearing"):
+                return clearing
+
+            elif option.lower() == ("install upgrades"):
+                self.install_upgrades(player)
+
+            elif option.lower() == ("uninstall upgrades"):
+                self.uninstall_upgrades(player)
+
+            elif option.lower() == ("build upgrades"):
+                self.build_upgrades(player)
+
+            elif option.lower() == ("options"):
+                options_screen(player)
+
+            else:
+                invalid()
+
+    def install_upgrades(self, player):
+        print("To install an upgrade, simply type it's name.")
+        print("")
+        print("Items available to install:")
+        for var in Items_folder.house_upgrades_list:
+            if var in player.items:
+                print(var.name)
+
+        option = input("Item name: ")
+        input_lower = option.lower()
+
+        if input_lower in player.items_dict:
+            Items_folder.house_upgrades_list.append(player.items_dict[input_lower])
+            player.items.remove(player.items_dict[input_lower])
+
+    def uninstall_upgrades(self, player):
+        print("To uninstall an upgrade, simply type it's name.")
+        print("")
+        print("Items available to uninstall:")
+        for var in Items_folder.installed_upgrades_list:
+            print(var.name)
+
+        option = input("Item name: ")
+        input_lower = option.lower()
+
+        if input_lower in Items_folder.installed_upgrades_dict:
+            Items_folder.installed_upgrades_list.remove(Items_folder.house_upgrades_dict[input_lower])
+            player.items.append(Items_folder.house_upgrades_dict[input_lower])
+
+        else:
+            print("You do not have this item installed.")
+
+    def build_upgrades(self, player):
+        print("Upgrades available for building.")
+        print("")
+        for var in Items_folder.house_upgrades_list:
+            print(var.name)
+
+        option = input("What would you like to build?: ")
+        input_lower = option.lower()
+
+        if input_lower in Items_folder.house_upgrades_dict:
+            player.craft_item(Items_folder.house_upgrades_dict[input_lower])
+
+        else:
+            invalid()
+
+##### OPTIONS SCREENS #####
+
+def options_screen(self):
+    print("OPTIONS")
+    print("")
+    print("-View character sheet")
+    print("-View equipment")
+    print("-View inventory")
+    print("-Craft item")
+    print("-View help screen")
+    print("-Return to game")
+    x = 0
+    while x == 0:
+
+        option = input("> ")
+
+
+        if option.lower() == ("view character sheet"):
+            Player_folder.Player.character_sheet(self)
+
+        elif option.lower() == ("view equipment"):
+            Player_folder.Player.equipment_screen(self)
+
+        elif option.lower() == ("view inventory"):
+            Player_folder.Player.inventory(self)
+
+        elif option.lower() == ("craft item"):
+            print("Put simple crafting function here.")
+
+        elif option.lower() == ("view help screen"):
+            print("Put help screen function here.")
+
+        elif option.lower() == ("return to game"):
+            x = 1
+
+        else:
+            print(invalid())
+
+
+# singleton constants
+forest = Forest()
+rocky_hillside = RockyHillside()
+clearing = Clearing()
+home = Home()
+farm = Farm()
+
+########## Crafting_folder #########
+
+import Items_folder
+from Locations_folder import Location
+from Functions_folder import invalid
+
+# Here's the class for that mess of code for crafting objects. I have an example of a recipe below that I'll use to go
+#into more detail
+
+class Crafting_recipe:
+    def __init__(self, name, equipment, variable_equipment, tools, variable_tools, resources, resource_amounts, output, output_amounts):
+        self.name = name
+        self.equipment = equipment
+        self.variable_equipment = variable_equipment
+        self.tools = tools
+        self.variable_tools = variable_tools
+        self.resources = resources
+        self.resource_amounts = resource_amounts
+        self.output = output
+        self.output_amounts = output_amounts
+
+# This is just for showing what you need for said recipe, taking the arugements from the class and making them easy to read.
+
+    def recipe_requirements(recipe):
+        print(recipe.name)
+        print("")
+        print("Required equipment:")
+        if len(recipe.equipment) > 0:
+            for var in recipe.equipment:
+                print(var.name)
+        else:
+            print("None")
+        print(" ")
+        print("Required tools:")
+        if len(recipe.tools) > 0:
+            for var in recipe.tools:
+                print(var.name)
+        if len(recipe.variable_tools) > 0:
+            for var in recipe.variable_tools:
+                x = 0
+                for var2 in var:
+                    while x == 0:
+                        print(var2.name + " or better")
+                        x = 1
+        else:
+            print("None")
+        print(" ")
+        print("Required resources: ")
+        if len(recipe.resources) > 0:
+            for var in recipe.resources:
+                print(var.name + ": " + str(recipe.resource_amounts[var]))
+        else:
+            print("None")
+        print(" ")
+        print("Output:")
+        if len(recipe.output) > 0:
+            for var in recipe.output:
+                print(var.name + ": " + str(recipe.output_amounts[var]))
+        else:
+            print("None")
+        print("")
+
+cutting_tools = [Items_folder.stone_knife, Items_folder.bone_knife, Items_folder.iron_knife, Items_folder.machete]
+
+variable_tool_list = [cutting_tools, chipping_tools, container_tools]
+variable_equipment_list = [cooking_equipment]
+
+#### BASIC RECIPES ####
+
+# BLANK RECIPE TEMPLATE
+crafting_blank_recipe = Crafting_recipe("Name of item goes here.", ["Equipment"], ["Variable equipment"], ["Tools"], ["Variable tools"], ["Resources"], {"Resource": "amount"},
+                                 ["Output"], {"Output": "amount"})
+
+# WEAPONS
+stone_knife_recipe = Crafting_recipe("Stone knife", [], [], [Items_folder.small_stone], [], [Items_folder.small_stone], {Items_folder.small_stone: 1},
+                    [Items_folder.stone_knife], {Items_folder.stone_knife: 1})
+
+#How the recipe above works for the variable equipment is the type of equipment has a list from poorest quality to best,
+then I just put list[2:] if I want only quality 3 or better to be able to craft the item.
+
+#######################################################################################################################
+
+
+
+item_recipes_list = []
+item_recipes_list.extend(weapon_recipe_list)
+item_recipes_list.extend(refined_resources_recipe_list)
+item_recipes_list.extend(tools_recipe_list)
+item_recipes_list.extend(equipment_recipe_list)
+item_recipes_list.extend(processed_animal_recipes)
+item_recipes_list.extend(butchered_animal_recipes)
+item_recipes_list.extend(seasoning_recipe_list)
+item_recipes_list.extend(cooked_meat_recipe_list)
+item_recipes_list.extend(salt_and_pepper_meat_list)
+item_recipes_list.extend(shelter_recipe_list)
+
+
+item_recipes_dict = {item_var.name.lower():item_var for item_var in item_recipes_list}
+
+#### CRAFTING AVAILABILITY LISTS ####
+
+#Going to use lists to contains recipes said object can make. Using them as locations.
+
+clay_oven_projects = []
+clay_oven_projects_dict = {item_var.name.lower():item_var for item_var in clay_oven_projects}
+
+class Clay_oven(Location):
+    def __init__(self):
+        self.name = "Clay oven"
+        self.description = "To craft an item, simply type its name."
+        self.options = "For recipe requirements, type 'requirements'. For a text file of all recipes and requirements, type print."
+        print("")
+        print("Available recipes:")
+        for var in clay_oven_projects:
+            print(var.name)
+
+    def action(self, player):
+        self.location()
+        x = 0
+        while x == 0:
+            option = input("> ")
+            input_lower = option.lower()
+
+            if input_lower in clay_oven_projects_dict:
+                player.craft_item(clay_oven_projects_dict[input_lower])
+
+            elif option.lower() == ("requirements"):
+                for var in clay_oven_projects:
+                    var.recipe_requirements()
+
+            elif option.lower() == ("print"):
+                print("Print function yet to be developed.")
+
+            elif option.lower() == ("exit"):
+                return home
+
+            else:
+                invalid()
+
+
+# create singleton constants
+clay_oven_location = Clay_oven()
+
+
+########## Functions_folder #########
+
+"""
+A module of general purpose functions that didn't really have a place anywhere else.
+This is entirely u/socal_nerdtastic's work, one again, awesome guy.
+"""
+
+import time
+import random
+from itertools import cycle
+
+
+DEBUG = False
+
+def invalid():
+    print("Invalid command, please try again.")
+
+spinner = cycle("\|/-")
+def sleep(seconds):
+    for i in range(seconds*4):
+        print(" Working ... ", next(spinner), end='\r', flush=True)
+time.sleep(.02 if DEBUG else .25)
